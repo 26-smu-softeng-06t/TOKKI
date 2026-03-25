@@ -1,0 +1,63 @@
+name: "📌 PBI: 사용자 스토리"
+description: "새로운 기능 또는 요구사항에 대한 Product Backlog Item을 생성합니다."
+title: "[PBI] <간단한 설명>"
+labels: ["pbi", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **User Story**
+
+        _As a **[역할]**, I want **[무엇]** so that **[이유]**._
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance Criteria"
+      description: "기능이 완료되었다고 판단하기 위한 조건을 목록으로 작성합니다."
+      placeholder: |
+        - [ ] 첫 번째 수용 조건
+        - [ ] 두 번째 수용 조건
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: "Tasks"
+      description: "세부 작업 항목을 리스트로 작성합니다."
+      placeholder: |
+        - [ ] UI 컴포넌트 설계
+        - [ ] API 엔드포인트 구현
+        - [ ] 테스트 코드 작성
+
+  - type: input
+    id: story_points
+    attributes:
+      label: "Story Point"
+      description: "PBI의 예상 작업량을 Fibonacci 수열(1, 2, 3, 5, 8…)로 기입합니다."
+      placeholder: "3"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      options:
+        - High
+        - Medium
+        - Low
+      default: 1
+
+  - type: input
+    id: due_date
+    attributes:
+      label: "Due Date"
+      description: "Sprint 완료 예정일 (YYYY-MM-DD)"
+      placeholder: "2026-04-24"
+
+  - type: markdown
+    attributes:
+      value: |
+        **Additional Notes**
+        - 관련 이슈 번호를 `Ref #번호` 형태로 적을 수 있습니다.

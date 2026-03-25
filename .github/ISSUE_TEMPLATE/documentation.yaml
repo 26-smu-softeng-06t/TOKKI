@@ -1,0 +1,54 @@
+name: "📝 Documentation"
+description: "문서 작성 및 수정 작업을 기록합니다."
+title: "[DOCS] "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "문서 작업 내용"
+      placeholder: "예: README에 로컬 실행 방법과 환경 변수 설명 추가"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: "문서 유형"
+      options:
+        - README
+        - API Spec
+        - Project Report
+        - Meeting Notes
+        - Retrospective
+        - Setup Guide
+        - Other
+      default: 0
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "포함할 항목"
+      placeholder: |
+        - 프로젝트 실행 방법
+        - .env 예시
+        - 브랜치 전략
+        - PR 규칙
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "완료 기준"
+      placeholder: |
+        - [ ] 문서 초안 작성
+        - [ ] 팀 검토 반영
+        - [ ] 오탈자 및 링크 점검
+    validations:
+      required: true
+
+  - type: input
+    id: related
+    attributes:
+      label: "관련 이슈"
+      placeholder: "#7, #13"
