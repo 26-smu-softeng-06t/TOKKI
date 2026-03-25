@@ -1,0 +1,43 @@
+name: "♻️ Refactor / Tech Debt"
+description: "리팩토링, 코드 정리, 기술부채 상환 작업을 기록합니다."
+title: "[REFACTOR] "
+labels: ["refactor", "tech-debt"]
+assignees: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: "현재 문제점"
+      placeholder: "예: QuizPage에 상태와 UI 로직이 과도하게 섞여 있어 유지보수가 어려움"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "개선 방안"
+      placeholder: "예: quiz logic을 custom hook으로 분리하고 결과 계산 로직을 util로 이동"
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: "기대 효과"
+      placeholder: "예: 테스트 용이성 증가, 재사용성 향상, 버그 가능성 감소"
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: "주의 사항 / 리스크"
+      placeholder: "예: 기존 결과 계산 로직과 동작 차이가 생기지 않도록 회귀 테스트 필요"
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: "작업 체크리스트"
+      placeholder: |
+        - [ ] 기존 구조 분석
+        - [ ] 리팩토링 설계
+        - [ ] 코드 변경
+        - [ ] 회귀 테스트
