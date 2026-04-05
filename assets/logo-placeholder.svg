@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120" role="img" aria-label="TOKKI 로고 자리">
+  <rect width="240" height="120" rx="12" fill="#f0f0f0" stroke="#d0d0d0" stroke-width="2"/>
+  <text x="120" y="56" text-anchor="middle" font-family="system-ui, Segoe UI, sans-serif" font-size="13" fill="#888">로고 이미지 교체</text>
+  <text x="120" y="78" text-anchor="middle" font-family="system-ui, Segoe UI, sans-serif" font-size="11" fill="#aaa">assets/logo.png 등으로 바꾸면 됩니다</text>
+</svg>
