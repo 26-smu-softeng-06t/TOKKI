@@ -1,63 +1,70 @@
-name: "📌 PBI: 사용자 스토리"
-description: "새로운 기능 또는 요구사항에 대한 Product Backlog Item을 생성합니다."
-title: "[PBI] <간단한 설명>"
+name: "PBI / User Story"
+description: "새 기능 또는 요구사항(PBI)을 등록합니다."
+title: "[PBI] "
 labels: ["pbi", "needs-triage"]
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        **User Story**
+        아래 형식을 참고해 사용자 관점에서 작성해 주세요.
+        As a [역할], I want [원하는 것], so that [기대 효과].
 
-        _As a **[역할]**, I want **[무엇]** so that **[이유]**._
+  - type: textarea
+    id: user_story
+    attributes:
+      label: "사용자 스토리"
+      placeholder: "예: As a 학습자, I want 오답만 다시 풀기, so that 약한 유형을 반복 학습할 수 있다."
+    validations:
+      required: true
 
   - type: textarea
     id: acceptance
     attributes:
-      label: "Acceptance Criteria"
-      description: "기능이 완료되었다고 판단하기 위한 조건을 목록으로 작성합니다."
+      label: "수용 기준"
+      description: "완료 여부를 판단할 조건을 체크리스트로 작성해 주세요."
       placeholder: |
-        - [ ] 첫 번째 수용 조건
-        - [ ] 두 번째 수용 조건
+        - [ ] 오답 문제만 모아 다시 풀 수 있다
+        - [ ] 재풀이 결과가 기록된다
     validations:
       required: true
 
   - type: textarea
     id: tasks
     attributes:
-      label: "Tasks"
-      description: "세부 작업 항목을 리스트로 작성합니다."
+      label: "작업 항목"
+      description: "개발 작업을 가능한 한 작게 나눠 작성해 주세요."
       placeholder: |
-        - [ ] UI 컴포넌트 설계
-        - [ ] API 엔드포인트 구현
-        - [ ] 테스트 코드 작성
+        - [ ] 화면 설계
+        - [ ] API 구현
+        - [ ] 테스트 작성
 
   - type: input
     id: story_points
     attributes:
-      label: "Story Point"
-      description: "PBI의 예상 작업량을 Fibonacci 수열(1, 2, 3, 5, 8…)로 기입합니다."
+      label: "스토리 포인트"
+      description: "예상 작업량을 1, 2, 3, 5, 8 중에서 선택해 기입해 주세요."
       placeholder: "3"
 
   - type: dropdown
     id: priority
     attributes:
-      label: "Priority"
+      label: "우선순위"
       options:
-        - High
-        - Medium
-        - Low
+        - 높음
+        - 보통
+        - 낮음
       default: 1
 
   - type: input
     id: due_date
     attributes:
-      label: "Due Date"
-      description: "Sprint 완료 예정일 (YYYY-MM-DD)"
+      label: "목표 완료일"
+      description: "YYYY-MM-DD 형식"
       placeholder: "2026-04-24"
 
-  - type: markdown
+  - type: input
+    id: related
     attributes:
-      value: |
-        **Additional Notes**
-        - 관련 이슈 번호를 `Ref #번호` 형태로 적을 수 있습니다.
+      label: "연관 이슈"
+      placeholder: "예: ref #21"

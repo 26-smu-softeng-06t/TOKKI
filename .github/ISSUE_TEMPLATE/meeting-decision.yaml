@@ -1,14 +1,14 @@
-name: "📣 Meeting / Decision Record"
+name: "Meeting / Decision Record"
 description: "회의 내용과 의사결정을 기록합니다."
 title: "[MEETING] "
-labels: ["meeting", "decision"]
+labels: ["decision"]
 assignees: []
 body:
   - type: input
     id: date
     attributes:
       label: "회의 일시"
-      placeholder: "2026-04-11 20:00"
+      placeholder: "YYYY-MM-DD HH:MM"
     validations:
       required: true
 
@@ -16,7 +16,7 @@ body:
     id: attendees
     attributes:
       label: "참석자"
-      placeholder: "홍길동, 김철수, 이영희"
+      placeholder: "예: 홍길동, 김철수, 이영희"
     validations:
       required: true
 
@@ -24,10 +24,11 @@ body:
     id: agenda
     attributes:
       label: "안건"
+      description: "논의할 항목을 번호로 작성해 주세요."
       placeholder: |
-        1. Sprint 1 작업 분배
-        2. DB 선택
-        3. 관리자 인증코드 처리 방식
+        1. 스프린트 작업 분배
+        2. 기술 선택
+        3. 일정 위험 요소 점검
     validations:
       required: true
 
@@ -35,10 +36,10 @@ body:
     id: decisions
     attributes:
       label: "결정 사항"
+      description: "합의한 내용을 명확히 적어주세요."
       placeholder: |
         - DB는 PostgreSQL 사용
         - 인증은 JWT 기반으로 진행
-        - Admin 기능은 Sprint 1에 포함
     validations:
       required: true
 
@@ -46,7 +47,7 @@ body:
     id: action_items
     attributes:
       label: "후속 액션"
+      description: "담당자/기한이 있으면 함께 적어주세요."
       placeholder: |
-        - [ ] README DB 설정 추가
-        - [ ] auth API 초안 작성
-        - [ ] GitHub Project에 작업 배치
+        - [ ] README DB 설정 추가 (담당: 홍길동, 기한: 2026-04-12)
+        - [ ] auth API 초안 작성 (담당: 김철수)

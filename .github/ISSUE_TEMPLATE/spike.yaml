@@ -1,14 +1,14 @@
-name: "🔎 Spike / Research"
-description: "기술 검토, 조사, 비교, 실험 결과를 기록합니다."
+name: "Spike / Research"
+description: "기술 검토, 조사, 실험 결과를 기록합니다."
 title: "[SPIKE] "
-labels: ["research", "spike"]
+labels: ["spike"]
 assignees: []
 body:
   - type: textarea
     id: question
     attributes:
       label: "조사 질문"
-      placeholder: "예: MySQL과 PostgreSQL 중 이번 과제에 더 적합한 선택은 무엇인가?"
+      placeholder: "예: 이번 프로젝트에서 PostgreSQL이 MySQL보다 적합한가?"
     validations:
       required: true
 
@@ -16,7 +16,7 @@ body:
     id: background
     attributes:
       label: "배경"
-      placeholder: "예: DBMS가 아직 미정이며 Sprint 0 내 결정 필요"
+      placeholder: "예: Sprint 내 DB 결정이 필요합니다."
 
   - type: textarea
     id: criteria
@@ -25,15 +25,14 @@ body:
       placeholder: |
         - 팀 경험
         - 설치 난이도
-        - JPA 호환성
-        - 무료 사용성
+        - 프레임워크 호환성
         - 유지보수 편의성
 
   - type: textarea
     id: result
     attributes:
       label: "조사 결과"
-      placeholder: "핵심 비교 결과를 작성"
+      placeholder: "핵심 비교 결과를 간단히 정리해 주세요."
     validations:
       required: true
 
@@ -41,7 +40,7 @@ body:
     id: recommendation
     attributes:
       label: "권장 결론"
-      placeholder: "예: Sprint 0에서는 PostgreSQL 채택 권장"
+      placeholder: "예: 초기 개발 속도를 위해 PostgreSQL 채택 권장"
     validations:
       required: true
 
@@ -50,6 +49,6 @@ body:
     attributes:
       label: "후속 조치"
       placeholder: |
-        - [ ] 팀 회의에서 결정
-        - [ ] 환경 설정 문서 업데이트
-        - [ ] DB 초기 스키마 작성
+        - [ ] 팀 회의에서 최종 결정
+        - [ ] 설정 문서 업데이트
+        - [ ] 초기 스키마 초안 작성
