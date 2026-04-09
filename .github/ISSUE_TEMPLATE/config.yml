@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: "팀 규칙 / Git 가이드"
-    url: "https://github.com/26-smu-softeng-06t/EWQM"
-    about: "브랜치 전략, 커밋 규칙, PR 규칙을 먼저 확인해주세요."
+    url: "https://github.com/26-smu-softeng-06t/TOKKI/wiki/Git-Branching-Strategy"
+    about: "브랜치 전략, 이슈 작성 규칙, PR 규칙을 먼저 확인해주세요."

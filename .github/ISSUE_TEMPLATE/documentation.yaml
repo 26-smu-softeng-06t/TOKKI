@@ -1,5 +1,5 @@
-name: "📝 Documentation"
-description: "문서 작성 및 수정 작업을 기록합니다."
+name: "Documentation"
+description: "문서 작성/수정 작업을 등록합니다."
 title: "[DOCS] "
 labels: ["documentation"]
 assignees: []
@@ -7,8 +7,9 @@ body:
   - type: textarea
     id: summary
     attributes:
-      label: "문서 작업 내용"
-      placeholder: "예: README에 로컬 실행 방법과 환경 변수 설명 추가"
+      label: "문서 작업 요약"
+      description: "무엇을 왜 수정하는지 적어주세요."
+      placeholder: "예: README에 로컬 실행 방법과 환경 변수 설명을 추가합니다."
     validations:
       required: true
 
@@ -18,32 +19,32 @@ body:
       label: "문서 유형"
       options:
         - README
-        - API Spec
-        - Project Report
-        - Meeting Notes
-        - Retrospective
-        - Setup Guide
-        - Other
+        - API 명세
+        - 프로젝트 보고서
+        - 회의록
+        - 회고
+        - 설치 가이드
+        - 기타
       default: 0
 
   - type: textarea
     id: scope
     attributes:
-      label: "포함할 항목"
+      label: "수정 범위"
+      description: "이번 이슈에서 다룰 항목을 체크리스트로 적어주세요."
       placeholder: |
-        - 프로젝트 실행 방법
-        - .env 예시
-        - 브랜치 전략
-        - PR 규칙
+        - [ ] 실행 방법 정리
+        - [ ] 브랜치/PR 규칙 정리
+        - [ ] 링크 및 오탈자 점검
 
   - type: textarea
     id: done
     attributes:
       label: "완료 기준"
       placeholder: |
-        - [ ] 문서 초안 작성
-        - [ ] 팀 검토 반영
-        - [ ] 오탈자 및 링크 점검
+        - [ ] 초안 작성 완료
+        - [ ] 팀 검토 의견 반영
+        - [ ] 최종 문서 링크 확인
     validations:
       required: true
 
@@ -51,4 +52,4 @@ body:
     id: related
     attributes:
       label: "관련 이슈"
-      placeholder: "#7, #13"
+      placeholder: "예: #7, #13"
