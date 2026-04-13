@@ -1,0 +1,92 @@
+name: "Feature"
+description: "새 기능 개발 작업을 등록합니다."
+title: "[FEATURE] "
+labels: ["task", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        구현할 기능을 간단하고 명확하게 작성해 주세요.
+        이슈 생성 후 GitHub Project에서 상태(Backlog -> Ready -> In Progress -> Review -> Done)를 관리합니다.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "목표"
+      description: "이번 기능으로 해결하려는 문제/목표를 적어주세요."
+      placeholder: "예: 사용자가 퀴즈를 끝낸 뒤 결과를 한눈에 확인할 수 있도록 결과 요약 화면을 제공합니다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "구현 범위"
+      description: "이번 이슈에서 포함/제외할 항목을 구분해 주세요."
+      placeholder: |
+        포함:
+        - 결과 요약 UI 추가
+        - 정답률 계산 로직 연결
+
+        제외:
+        - 결과 공유 기능
+        - 상세 통계 화면
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "완료 기준"
+      description: "완료 여부를 판단할 체크리스트를 작성해 주세요."
+      placeholder: |
+        - [ ] 퀴즈 완료 시 결과 요약 화면이 표시된다
+        - [ ] 정답/오답/정답률이 정확히 계산된다
+        - [ ] 오류 없이 다음 화면으로 이동할 수 있다
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: "작업 항목"
+      description: "구현 작업을 가능한 한 작게 나눠 적어주세요."
+      placeholder: |
+        - [ ] 화면 설계 및 컴포넌트 작성
+        - [ ] API/상태 연동
+        - [ ] 테스트 및 예외 처리
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "영역"
+      description: "주요 작업 영역을 선택해 주세요."
+      options:
+        - Frontend
+        - Backend
+        - Fullstack
+      default: 2
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "우선순위"
+      options:
+        - 높음
+        - 보통
+        - 낮음
+      default: 1
+
+  - type: input
+    id: target_branch
+    attributes:
+      label: "대상 브랜치"
+      description: "일반 기능 개발은 dev 기준으로 진행합니다."
+      placeholder: "dev"
+
+  - type: input
+    id: related
+    attributes:
+      label: "연관 이슈"
+      placeholder: "예: ref #21, close #34"
