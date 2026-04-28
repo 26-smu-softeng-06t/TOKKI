@@ -1,0 +1,28 @@
+spring:
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+  application:
+    name: tokki
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME:${MYSQL_USERNAME}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${MYSQL_PASSWORD}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+tokki:
+  admin:
+    secret-key: ${ADMIN_SECRET_KEY:}
+  jwt:
+    secret: ${JWT_SECRET:}
