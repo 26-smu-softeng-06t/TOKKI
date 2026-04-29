@@ -25,7 +25,7 @@ TOKKI/
       layouts/              Shared page layouts
       pages/                Route-level pages
       routes/               Router definitions
-      styles/               Global styles and Tailwind entry
+      styles/               Global styles
       utils/                Frontend utilities
   scripts/                  Local helper scripts
 ```
