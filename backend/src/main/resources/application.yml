@@ -17,11 +17,35 @@ spring:
       hibernate:
         format_sql: true
     open-in-view: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        http-only: true
+        secure: false
 
 tokki:
+  frontend:
+    login-url: ${TOKKI_FRONTEND_LOGIN_URL:http://localhost:5173/login}
+    callback-url: ${TOKKI_FRONTEND_CALLBACK_URL:http://localhost:5173/login/callback}
   admin:
     secret-key: ${ADMIN_SECRET_KEY}
   jwt:
