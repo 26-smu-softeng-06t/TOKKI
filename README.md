@@ -47,3 +47,24 @@ Spring Boot React MySQL Gradle TypeScript Tailwind CSS Axios JavaScript
 ## Caveat
 
 **안쪽 구조·기술 스택·화면 배치**는 앞으로도 계속 손볼 수 있어요.
+
+---
+
+## 로컬 Google OAuth2 테스트
+
+이슈 #39의 실제 로그인 왕복 테스트는 DB 사용자 등록 없이 `auth-test` 프로필로 확인할 수 있어요.
+
+1. Google Cloud Console의 승인된 리다이렉트 URI에 `http://localhost:8080/login/oauth2/code/google`를 등록합니다.
+2. `.env`에 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKKI_FRONTEND_CALLBACK_URL`을 설정합니다.
+3. 백엔드를 Java 21로 실행합니다. 프론트 dev 서버 없이 백엔드 테스트 페이지로 확인하려면 콜백 URL을 `http://localhost:8080/auth-test/callback`로 둡니다.
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+cd backend
+.\gradlew.bat bootRun --args='--spring.profiles.active=auth-test'
+```
+
+4. 브라우저에서 `http://localhost:8080/auth-test/login`에 접속해 Google 로그인 버튼을 누릅니다.
+
+성공하면 `/auth-test/callback` 화면에서 “Google OAuth2 로그인과 서버 세션 확인에 성공했습니다.”가 표시됩니다. 서버 세션 확인은 `GET /api/auth/me`, 로그아웃은 `POST /api/auth/logout`, 최근 로그인 이벤트 확인은 관리자 키를 포함한 `GET /api/auth/events`로 확인할 수 있습니다.

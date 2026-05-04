@@ -1,20 +1,29 @@
 package com.tokki.auth.handler;
 
+import com.tokki.auth.service.AuthEventLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private static final String DEFAULT_FRONTEND_CALLBACK_URL = "http://localhost:5173/login/callback";
+    private final AuthEventLogService authEventLogService;
+
+    @Value("${tokki.frontend.callback-url}")
+    private String frontendCallbackUrl;
 
     @Override
     public void onAuthenticationSuccess(
@@ -29,20 +38,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String picture = (String) oAuth2User.getAttribute("picture");
 
         log.info("[OAuth2 Success] Email={}, Name={}", email, name);
+        authEventLogService.recordSuccess("google", email, name);
 
-        String redirectUrl = DEFAULT_FRONTEND_CALLBACK_URL
-                + "?email=" + URLEncoder.encode(email != null ? email : "", "UTF-8")
-                + "&name=" + URLEncoder.encode(name != null ? name : "", "UTF-8")
-                + "&picture=" + URLEncoder.encode(picture != null ? picture : "", "UTF-8");
+        String redirectUrl = UriComponentsBuilder.fromUriString(frontendCallbackUrl)
+                .queryParam("email", email != null ? email : "")
+                .queryParam("name", name != null ? name : "")
+                .queryParam("picture", picture != null ? picture : "")
+                .encode(StandardCharsets.UTF_8)
+                .build()
+                .toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
-
-    private static String URLEncoder(String value, String encoding) {
-        try {
-            return java.net.URLEncoder.encode(value, encoding);
-        } catch (java.io.UnsupportedEncodingException e) {
-            return value;
-        }
     }
 }

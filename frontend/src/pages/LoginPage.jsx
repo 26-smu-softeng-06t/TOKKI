@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import api from '../api/axios';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -12,9 +13,19 @@ export default function LoginPage() {
     }
   }, [error]);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    window.location.href = '/oauth2/authorization/google';
+    try {
+      const response = await api.get('/auth/google-url');
+      const authorizationUrl = response.data?.data?.authorizationUrl
+        || response.data?.authorizationUrl
+        || '/oauth2/authorization/google';
+
+      window.location.href = authorizationUrl;
+    } catch (requestError) {
+      console.error('[Google Login URL Error]', requestError);
+      setLoading(false);
+    }
   };
 
   return (

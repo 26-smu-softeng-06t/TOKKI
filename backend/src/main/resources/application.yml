@@ -43,6 +43,9 @@ server:
         secure: false
 
 tokki:
+  frontend:
+    login-url: ${TOKKI_FRONTEND_LOGIN_URL:http://localhost:5173/login}
+    callback-url: ${TOKKI_FRONTEND_CALLBACK_URL:http://localhost:5173/login/callback}
   admin:
     secret-key: ${ADMIN_SECRET_KEY}
   jwt:

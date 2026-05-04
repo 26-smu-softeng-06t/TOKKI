@@ -1,26 +1,68 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import api from '../api/axios';
 
 export default function LoginCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
+  const [sessionStatus, setSessionStatus] = useState('checking');
 
   const email = searchParams.get('email');
   const name = searchParams.get('name');
   const picture = searchParams.get('picture');
 
   useEffect(() => {
-    if (!email) {
-      navigate('/login?error=no_email', { replace: true });
-      return;
+    let ignore = false;
+
+    async function verifySession() {
+      try {
+        const response = await api.get('/auth/me');
+        const currentUser = response.data?.data;
+
+        if (ignore) {
+          return;
+        }
+
+        if (!currentUser?.authenticated) {
+          navigate('/login?error=session_not_found', { replace: true });
+          return;
+        }
+
+        setUserInfo({
+          email: currentUser.email || email || '',
+          name: currentUser.name || name || '',
+          picture: currentUser.picture || picture || '',
+        });
+        setSessionStatus('verified');
+        console.info('[LoginCallback] OAuth2 session verified', {
+          email: currentUser.email,
+          provider: currentUser.provider,
+        });
+      } catch (requestError) {
+        if (!ignore) {
+          console.error('[LoginCallback] Session verification failed', requestError);
+          setSessionStatus('failed');
+        }
+      }
     }
 
-    setUserInfo({ email, name: name || '', picture: picture || '' });
+    verifySession();
 
-    // TODO: Issue #39 범위 외 - JWT 토큰 발급 및 저장
-    console.info('[LoginCallback] OAuth2 success', { email, name, picture });
+    return () => {
+      ignore = true;
+    };
   }, [email, name, picture, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (requestError) {
+      console.error('[Logout Error]', requestError);
+    } finally {
+      navigate('/login');
+    }
+  };
 
   if (!userInfo) {
     return (
@@ -28,7 +70,11 @@ export default function LoginCallbackPage() {
         <div className="login-card">
           <div className="callback-loading">
             <span className="spinner" />
-            <p>로그인 처리 중...</p>
+            <p>
+              {sessionStatus === 'failed'
+                ? '세션 확인에 실패했습니다.'
+                : '로그인 세션 확인 중...'}
+            </p>
           </div>
         </div>
       </main>
@@ -40,7 +86,7 @@ export default function LoginCallbackPage() {
       <div className="login-card">
         <div className="callback-header">
           <h2 className="callback-title">로그인 완료</h2>
-          <p className="callback-subtitle">구글 계정 연동에 성공했습니다.</p>
+          <p className="callback-subtitle">구글 계정 연동과 세션 확인에 성공했습니다.</p>
         </div>
 
         <div className="callback-user-info">
@@ -79,7 +125,7 @@ export default function LoginCallbackPage() {
             {/* TODO: Issue #39 범위 외 - JWT 기반 인증 연동 후 실제 로그아웃 구현 */}
             <button
               className="callback-logout-btn"
-              onClick={() => navigate('/login')}
+              onClick={handleLogout}
               type="button"
             >
               다른 계정으로 로그인
