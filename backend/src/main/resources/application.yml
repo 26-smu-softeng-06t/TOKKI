@@ -13,10 +13,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true
     open-in-view: false
+  sql:
+    init:
+      mode: never
   security:
     oauth2:
       client:
@@ -34,7 +38,7 @@ spring:
             user-name-attribute: sub
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:4000}
   servlet:
     session:
       cookie:
@@ -50,3 +54,11 @@ tokki:
     secret-key: ${ADMIN_SECRET_KEY}
   jwt:
     secret: ${JWT_SECRET}
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:}
+  client-email: ${FIREBASE_CLIENT_EMAIL:}
+  private-key: ${FIREBASE_PRIVATE_KEY:}
+
+admin:
+  secret-key: ${ADMIN_SECRET_KEY:}

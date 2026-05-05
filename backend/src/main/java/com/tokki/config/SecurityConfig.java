@@ -1,50 +1,35 @@
 package com.tokki.config;
 
-import com.tokki.auth.handler.OAuth2FailureHandler;
-import com.tokki.auth.handler.OAuth2SuccessHandler;
-import com.tokki.auth.service.CustomOAuth2UserService;
+import com.tokki.security.FirebaseTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2SuccessHandler oauth2SuccessHandler;
-    private final OAuth2FailureHandler oauth2FailureHandler;
+    private final FirebaseTokenFilter firebaseTokenFilter;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/api/auth/**",
-                    "/auth-test/**",
-                    "/login/oauth2/code/**",
-                    "/oauth2/authorization/**",
-                    "/actuator/health"
-                ).permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/api/pvp/ws/**", "/ws/pvp/**").permitAll()
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().permitAll()
             )
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo ->
-                    userInfo.userService(customOAuth2UserService)
-                )
-                .successHandler(oauth2SuccessHandler)
-                .failureHandler(oauth2FailureHandler)
-            );
-
-        return http.build();
+            .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
 }
