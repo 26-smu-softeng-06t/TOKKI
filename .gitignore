@@ -691,3 +691,7 @@ FodyWeavers.xsd
 # Local Gradle wrapper/cache homes used by sandboxed verification runs
 .gradle/
 .gradle-home/
+
+# Firebase service account credentials
+*firebase-adminsdk*.json
+serviceAccount*.json

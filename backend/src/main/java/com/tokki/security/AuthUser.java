@@ -1,11 +1,13 @@
 package com.tokki.security;
 
-import lombok.AllArgsConstructor;
+import com.tokki.domain.UserRole;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthUser {
-    private String uid;
-    private String email;
+    private final String uid;
+    private final String email;
+    private final UserRole role;
 }

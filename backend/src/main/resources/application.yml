@@ -63,6 +63,7 @@ tokki:
       max-events: ${TOKKI_AUTH_EVENT_LOG_MAX_EVENTS:100}
   jwt:
     secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
   firebase:
     web:
       api-key: ${VITE_FIREBASE_API_KEY:}
@@ -74,6 +75,7 @@ tokki:
       measurement-id: ${VITE_FIREBASE_MEASUREMENT_ID:}
 
 firebase:
-  project-id: ${FIREBASE_PROJECT_ID:}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  project-id: ${FIREBASE_PROJECT_ID:${VITE_FIREBASE_PROJECT_ID:}}
   client-email: ${FIREBASE_CLIENT_EMAIL:}
   private-key: ${FIREBASE_PRIVATE_KEY:}
