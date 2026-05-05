@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home } from 'lu
 import { useAuth } from '../hooks/useAuth';
 import { StageService } from '../services/StageService';
 import { ProgressService } from '../services/ProgressService';
+import { QuizSessionService } from '../services/QuizSessionService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import type { Stage, Word, QuizMode } from '../types';
 
@@ -129,24 +130,23 @@ export default function QuizPage() {
   };
 
   const saveProgress = (finalResults: QuestionResult[]) => {
-    if (!user || !stageId || !stage) return;
+    if (!user || !stageId) return;
     const score = finalResults.filter((r) => r.isCorrect).length;
-    ProgressService.saveProgress({
-      progressId: '',
-      userId: user.uid,
+
+    // Save quiz session — persists score and per-answer details (including incorrect-word tracking)
+    QuizSessionService.saveQuizResult({
       stageId,
-      completed: true,
-      lastScore: score,
-      incorrectWords: finalResults
-        .filter((r) => !r.isCorrect)
-        .map((r) => ({
-          incorrectWordId: '',
-          progressId: '',
-          wordId: r.word.wordId,
-          isResolved: false,
-        })),
-      updatedAt: new Date().toISOString(),
+      score,
+      totalQuestions: finalResults.length,
+      answers: finalResults.map((r) => ({
+        wordId: r.word.wordId,
+        userAnswer: r.userAnswer,
+        correct: r.isCorrect,
+      })),
     }).catch(() => {});
+
+    // Mark stage as completed
+    ProgressService.markStageCompleted(stageId).catch(() => {});
   };
 
   const handleRetry = () => {
