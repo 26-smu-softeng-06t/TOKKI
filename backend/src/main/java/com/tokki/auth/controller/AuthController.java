@@ -1,10 +1,12 @@
 package com.tokki.auth.controller;
 
 import com.tokki.auth.service.AuthEventLogService;
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
+import com.tokki.config.properties.TokkiAdminProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,29 +27,27 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthEventLogService authEventLogService;
-
-    @Value("${tokki.admin.secret-key:}")
-    private String adminSecretKey;
+    private final TokkiAdminProperties adminProperties;
 
     @GetMapping("/google-url")
-    public ResponseEntity<Map<String, Map<String, String>>> getGoogleAuthorizationUrl() {
-        return ResponseEntity.ok(data(Map.of("authorizationUrl", "/oauth2/authorization/google")));
+    public ResponseEntity<ApiResponse<Map<String, String>>> getGoogleAuthorizationUrl() {
+        return ResponseEntity.ok(ApiResponses.data(Map.of("authorizationUrl", "/oauth2/authorization/google")));
     }
 
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Map<String, String>>> authStatus() {
-        return ResponseEntity.ok(data(Map.of("status", "configured")));
+    public ResponseEntity<ApiResponse<Map<String, String>>> authStatus() {
+        return ResponseEntity.ok(ApiResponses.data(Map.of("status", "configured")));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, ?>> currentUser(Authentication authentication) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> currentUser(Authentication authentication) {
         if (!isOAuth2Authenticated(authentication)) {
-            return ResponseEntity.ok(Map.of("data", Map.of("authenticated", false)));
+            return ResponseEntity.ok(ApiResponses.data(Map.of("authenticated", (Object) false)));
         }
 
         OAuth2User user = (OAuth2User) authentication.getPrincipal();
 
-        return ResponseEntity.ok(Map.of("data", Map.of(
+        return ResponseEntity.ok(ApiResponses.data(Map.of(
                 "authenticated", true,
                 "provider", "google",
                 "providerId", stringAttribute(user, "sub"),
@@ -58,7 +58,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, Map<String, String>>> logout(
+    public ResponseEntity<ApiResponse<Map<String, String>>> logout(
             Authentication authentication,
             HttpServletRequest request,
             HttpServletResponse response
@@ -67,26 +67,26 @@ public class AuthController {
             new SecurityContextLogoutHandler().logout(request, response, authentication);
         }
 
-        return ResponseEntity.ok(data(Map.of("status", "logged_out")));
+        return ResponseEntity.ok(ApiResponses.data(Map.of("status", "logged_out")));
     }
 
     @GetMapping("/events")
-    public ResponseEntity<Map<String, ?>> authEvents(
+    public ResponseEntity<?> authEvents(
             @RequestHeader(value = "X-TOKKI-ADMIN-KEY", required = false) String adminKey
     ) {
         if (!hasValidAdminKey(adminKey)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", Map.of(
-                            "code", "INVALID_ADMIN_KEY",
-                            "message", "A valid admin key is required to read auth events."
-                    )));
+                    .body(ApiResponses.error(
+                            "INVALID_ADMIN_KEY",
+                            "A valid admin key is required to read auth events."
+                    ));
         }
 
-        return ResponseEntity.ok(Map.of("data", authEventLogService.recent()));
+        return ResponseEntity.ok(ApiResponses.data(authEventLogService.recent()));
     }
 
     private boolean hasValidAdminKey(String adminKey) {
-        return StringUtils.hasText(adminSecretKey) && adminSecretKey.equals(adminKey);
+        return StringUtils.hasText(adminProperties.secretKey()) && adminProperties.secretKey().equals(adminKey);
     }
 
     private boolean isOAuth2Authenticated(Authentication authentication) {
@@ -100,7 +100,4 @@ public class AuthController {
         return value instanceof String stringValue ? stringValue : "";
     }
 
-    private static Map<String, Map<String, String>> data(Map<String, String> value) {
-        return Map.of("data", value);
-    }
 }

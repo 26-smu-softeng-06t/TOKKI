@@ -1,6 +1,7 @@
 package com.tokki.auth.service;
 
-import com.tokki.auth.dto.OAuth2UserAttributes;
+import com.tokki.auth.oauth.OAuth2UserAttributeMapperRegistry;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -14,7 +15,10 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    private final OAuth2UserAttributeMapperRegistry attributeMapperRegistry;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -23,15 +27,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        OAuth2UserAttributes userAttributes = OAuth2UserAttributes.of(registrationId, attributes);
+        OAuth2UserAttributeMapperRegistry.MappedOAuth2User mappedUser =
+                attributeMapperRegistry.map(registrationId, attributes);
 
         log.info("[OAuth2] Provider={}, ProviderId={}, Email={}",
-                userAttributes.provider(), userAttributes.providerId(), userAttributes.email());
+                mappedUser.attributes().provider(),
+                mappedUser.attributes().providerId(),
+                mappedUser.attributes().email());
 
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
                 attributes,
-                "sub"
+                mappedUser.nameAttributeKey()
         );
     }
 }

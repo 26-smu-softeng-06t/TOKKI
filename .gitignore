@@ -219,6 +219,9 @@ Temporary Items
 
 # production
 /build
+backend/.gradle/
+backend/build/
+frontend/dist/
 
 # misc
 *.pem
@@ -234,6 +237,7 @@ yarn-error.log*
 .env.*
 !.env.example
 .env*.local
+.firebase.env
 
 # vercel
 .vercel
