@@ -322,7 +322,7 @@ export default function QuizPage() {
             <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">
               {mode === 'KtoE' ? '뜻' : '단어'}
             </p>
-            <p className="text-2xl font-bold text-slate-900 leading-snug break-keep">
+            <p id="quiz-prompt" className="text-2xl font-bold text-slate-900 leading-snug break-keep">
               {getPrompt(currentWord)}
             </p>
             {currentWord.example && !submitted && (
@@ -345,7 +345,7 @@ export default function QuizPage() {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSubmit();
+                  if (e.key === 'Enter' && answer.trim()) handleSubmit();
                 }}
                 placeholder={mode === 'KtoE' ? '영단어를 입력하세요' : '뜻을 입력하세요'}
                 aria-label={inputLabel}
