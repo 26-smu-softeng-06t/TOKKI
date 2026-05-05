@@ -32,3 +32,11 @@ TOKKI/
 
 The requirements and design documents currently live in the sibling `../SoftwareEngineering_Docs` repository.
 
+## Implementation boundaries
+
+- Frontend implementation should keep backend communication behind `frontend/src/api`.
+- Feature-specific React state and screens should live under `frontend/src/features` and `frontend/src/pages`.
+- Backend API responses should use the shared `com.tokki.common.api` response wrappers.
+- OAuth provider-specific parsing belongs under `com.tokki.auth.oauth`, so adding another provider does not require changing controller code.
+- Environment-backed settings should be exposed through `com.tokki.config.properties` instead of direct `@Value` fields.
+

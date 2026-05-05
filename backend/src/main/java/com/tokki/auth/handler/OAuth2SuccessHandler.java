@@ -1,11 +1,11 @@
 package com.tokki.auth.handler;
 
 import com.tokki.auth.service.AuthEventLogService;
+import com.tokki.config.properties.TokkiFrontendProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -21,9 +21,7 @@ import java.nio.charset.StandardCharsets;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final AuthEventLogService authEventLogService;
-
-    @Value("${tokki.frontend.callback-url}")
-    private String frontendCallbackUrl;
+    private final TokkiFrontendProperties frontendProperties;
 
     @Override
     public void onAuthenticationSuccess(
@@ -40,7 +38,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         log.info("[OAuth2 Success] Email={}, Name={}", email, name);
         authEventLogService.recordSuccess("google", email, name);
 
-        String redirectUrl = UriComponentsBuilder.fromUriString(frontendCallbackUrl)
+        String redirectUrl = UriComponentsBuilder.fromUriString(frontendProperties.callbackUrl())
                 .queryParam("email", email != null ? email : "")
                 .queryParam("name", name != null ? name : "")
                 .queryParam("picture", picture != null ? picture : "")

@@ -1,5 +1,6 @@
 package com.tokki.auth.service;
 
+import com.tokki.config.properties.TokkiAuthProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -10,9 +11,12 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 @Service
 public class AuthEventLogService {
 
-    private static final int MAX_EVENTS = 100;
-
     private final ConcurrentLinkedDeque<AuthEventLogEntry> events = new ConcurrentLinkedDeque<>();
+    private final int maxEvents;
+
+    public AuthEventLogService(TokkiAuthProperties properties) {
+        this.maxEvents = properties.eventLog().maxEvents();
+    }
 
     public void recordSuccess(String provider, String email, String name) {
         add(new AuthEventLogEntry(
@@ -42,7 +46,7 @@ public class AuthEventLogService {
 
     private void add(AuthEventLogEntry event) {
         events.addFirst(event);
-        while (events.size() > MAX_EVENTS) {
+        while (events.size() > maxEvents) {
             events.removeLast();
         }
     }
