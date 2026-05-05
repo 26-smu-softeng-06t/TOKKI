@@ -2,21 +2,23 @@ import http from '../lib/axios';
 import type { PvpRoom, PvpResult } from '../types';
 
 export class PvpService {
-  private static readonly _http = http;
-
-  static async createRoom(_stageId: string): Promise<PvpRoom> {
-    throw new Error('not implemented');
+  static async getWaitingRooms(): Promise<PvpRoom[]> {
+    return (await http.get('/pvp/rooms')) as unknown as PvpRoom[];
   }
 
-  static async joinRoom(_inviteCode: string): Promise<PvpRoom> {
-    throw new Error('not implemented');
+  static async createRoom(stageId: string): Promise<PvpRoom> {
+    return (await http.post('/pvp/rooms', { stageId })) as unknown as PvpRoom;
   }
 
-  static async saveResult(_result: Omit<PvpResult, 'resultId'>): Promise<PvpResult> {
-    throw new Error('not implemented');
+  static async joinRoom(roomId: string): Promise<PvpRoom> {
+    return (await http.post('/pvp/rooms/join', { roomId })) as unknown as PvpRoom;
   }
 
-  static async completeRoom(_roomId: string): Promise<PvpRoom> {
-    throw new Error('not implemented');
+  static async saveResult(result: Omit<PvpResult, 'resultId'>): Promise<PvpResult> {
+    return (await http.post('/pvp/results', result)) as unknown as PvpResult;
+  }
+
+  static async completeRoom(roomId: string): Promise<PvpRoom> {
+    return (await http.post(`/pvp/rooms/${roomId}/complete`)) as unknown as PvpRoom;
   }
 }

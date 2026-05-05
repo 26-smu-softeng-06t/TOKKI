@@ -6,7 +6,7 @@ spring:
   application:
     name: tokki
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/tokki?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:${MYSQL_USERNAME}}
     password: ${SPRING_DATASOURCE_PASSWORD:${MYSQL_PASSWORD}}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -16,7 +16,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
+  sql:
+    init:
+      mode: never
   security:
     oauth2:
       client:
@@ -68,3 +72,8 @@ tokki:
       messaging-sender-id: ${VITE_FIREBASE_MESSAGING_SENDER_ID:}
       app-id: ${VITE_FIREBASE_APP_ID:}
       measurement-id: ${VITE_FIREBASE_MEASUREMENT_ID:}
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:}
+  client-email: ${FIREBASE_CLIENT_EMAIL:}
+  private-key: ${FIREBASE_PRIVATE_KEY:}
