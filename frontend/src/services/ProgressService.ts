@@ -16,6 +16,10 @@ export class ProgressService {
     await http.post('/progress', progress);
   }
 
+  static async markStageCompleted(stageId: string): Promise<void> {
+    await http.post('/progress', { stageId, completed: true });
+  }
+
   static async getIncorrectWords(userId: string): Promise<IncorrectWord[]> {
     return (await http.get('/progress/incorrect', { params: { userId } })) as unknown as IncorrectWord[];
   }
