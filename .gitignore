@@ -695,3 +695,6 @@ FodyWeavers.xsd
 # Firebase service account credentials
 *firebase-adminsdk*.json
 serviceAccount*.json
+
+# Local working notes
+notes/
