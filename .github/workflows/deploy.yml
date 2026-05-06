@@ -37,6 +37,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Restore production environment
+        env:
+          TOKKI_ENV: ${{ secrets.TOKKI_ENV }}
+        run: |
+          if [ -z "$TOKKI_ENV" ]; then
+            echo "Missing required GitHub secret: TOKKI_ENV"
+            exit 1
+          fi
+          printf '%s\n' "$TOKKI_ENV" > .env
+          test -s .env
+          grep -q '^VITE_FIREBASE_API_KEY=' .env
+          grep -q '^FIREBASE_PROJECT_ID=' .env
+
       - name: Build backend (Gradle)
         run: |
           cd backend
@@ -123,6 +136,16 @@ jobs:
           source: "frontend/dist/*"
           target: "/opt/tokki/frontend/dist/"
           strip_components: 2
+          overwrite: true
+
+      - name: Transfer production environment to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: ".env"
+          target: "/opt/tokki/"
           overwrite: true
 
       # ==========================================
