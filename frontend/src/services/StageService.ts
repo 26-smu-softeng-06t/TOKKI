@@ -14,21 +14,21 @@ import type { Stage, DifficultyLevel, StageInput } from '../types';
  */
 function normalizeStage(
   stageRaw: unknown,
-  stageId: string,
+  stageId: number,
   wordsRaw: unknown,
 ): Stage {
   const s = stageRaw as Record<string, unknown>;
   const ws = ((wordsRaw as unknown[]) ?? []) as Record<string, unknown>[];
 
   return {
-    stageId: String(s.stageId ?? s.id ?? stageId),
+    stageId: Number(s.stageId ?? s.id ?? stageId),
     difficulty: (s.difficulty ?? 'easy') as DifficultyLevel,
     stageNumber: Number(s.stageNumber ?? s.level ?? 0),
     createdAt: String(s.createdAt ?? ''),
     updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
     words: ws.map((w, i) => ({
-      wordId: String(w.wordId ?? w.id ?? ''),
-      stageId: String(w.stageId ?? stageId),
+      wordId: Number(w.wordId ?? w.id ?? 0),
+      stageId: Number(w.stageId ?? stageId),
       // New schema has `word` (English); old backend has `meaning` (English) + `korean` (Korean)
       word: String(w.word ?? ('korean' in w ? w.meaning : '') ?? ''),
       meaning: String(('korean' in w ? w.korean : w.meaning) ?? ''),
@@ -43,7 +43,7 @@ export class StageService {
     return (await http.get('/stages')) as unknown as Stage[];
   }
 
-  static async getStageById(stageId: string): Promise<Stage> {
+  static async getStageById(stageId: number): Promise<Stage> {
     try {
       const [stageRaw, wordsRaw] = await Promise.all([
         http.get(`/stages/${stageId}`),
@@ -59,16 +59,16 @@ export class StageService {
     }
   }
 
-  static async createStage(data: StageInput): Promise<string> {
-    const res = (await http.post('/stages', data)) as unknown as { stageId: string };
+  static async createStage(data: StageInput): Promise<number> {
+    const res = (await http.post('/stages', data)) as unknown as { stageId: number };
     return res.stageId;
   }
 
-  static async updateStage(stageId: string, data: Partial<StageInput>): Promise<void> {
+  static async updateStage(stageId: number, data: Partial<StageInput>): Promise<void> {
     await http.put(`/stages/${stageId}`, data);
   }
 
-  static async deleteStage(stageId: string): Promise<void> {
+  static async deleteStage(stageId: number): Promise<void> {
     await http.delete(`/stages/${stageId}`);
   }
 

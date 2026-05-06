@@ -37,4 +37,11 @@ public class ProgressController {
             @AuthenticationPrincipal AuthUser authUser) {
         return ResponseEntity.ok(progressService.getIncorrectWords(authUser.getUid()));
     }
+    @DeleteMapping("/incorrect/{wordId}")
+    public ResponseEntity<Void> deleteIncorrectWord(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long wordId) {
+        progressService.deleteIncorrectWord(authUser.getUid(), wordId);
+        return ResponseEntity.noContent().build();
+    }
 }

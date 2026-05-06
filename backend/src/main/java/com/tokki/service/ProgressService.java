@@ -1,8 +1,6 @@
 package com.tokki.service;
 
-import com.tokki.domain.Stage;
-import com.tokki.domain.User;
-import com.tokki.domain.UserProgress;
+import com.tokki.domain.*;
 import com.tokki.dto.request.SaveProgressRequest;
 import com.tokki.dto.response.IncorrectWordResponse;
 import com.tokki.dto.response.ProgressResponse;
@@ -59,5 +57,12 @@ public class ProgressService {
         return incorrectWordRepository.findByUserUidOrderByCountDesc(uid).stream()
                 .map(IncorrectWordResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public void deleteIncorrectWord(String uid, Long wordId) {
+        IncorrectWord incorrectWord = incorrectWordRepository.findByUserUidAndWordId(uid, wordId)
+                .orElseThrow(() -> new AppException(ErrorCode.WORD_NOT_FOUND));
+        incorrectWordRepository.delete(incorrectWord);
     }
 }

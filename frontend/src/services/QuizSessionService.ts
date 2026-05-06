@@ -2,14 +2,14 @@ import http from '../lib/axios';
 import type { QuizSession } from '../types';
 
 export interface SaveSessionRequest {
-  stageId: string;
+  stageId: number;
   score: number;
   totalQuestions: number;
-  answers: Array<{ wordId: string; userAnswer: string; correct: boolean }>;
+  answers: Array<{ wordId: number; userAnswer: string; correct: boolean }>;
 }
 
 export class QuizSessionService {
-  static async getSession(stageId: string): Promise<QuizSession | null> {
+  static async getSession(stageId: number): Promise<QuizSession | null> {
     const sessions = (await http.get('/sessions')) as unknown as QuizSession[];
     return sessions.find((session) => session.stageId === stageId) ?? null;
   }
@@ -22,7 +22,7 @@ export class QuizSessionService {
     await http.post('/sessions', payload);
   }
 
-  static async deleteSession(sessionId: string): Promise<void> {
+  static async deleteSession(sessionId: number): Promise<void> {
     await http.delete(`/sessions/${sessionId}`);
   }
 }

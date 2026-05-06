@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home, BookOpen, Trophy } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { StageService } from '../services/StageService';
 import { ProgressService } from '../services/ProgressService';
 import { QuizSessionService } from '../services/QuizSessionService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import type { Stage, Word, QuizMode } from '../types';
+import type { Stage, Word, QuizMode, IncorrectWord } from '../types';
 
-type QuizPhase = 'loading' | 'error' | 'mode-select' | 'quiz' | 'result';
+type QuizPhase = 'loading' | 'error' | 'incorrect-note' | 'mode-select' | 'quiz' | 'result';
 
 interface QuestionResult {
   word: Word;
@@ -42,6 +42,9 @@ export default function QuizPage() {
 
   const [phase, setPhase] = useState<QuizPhase>('loading');
   const [stage, setStage] = useState<Stage | null>(null);
+  const [incorrectWords, setIncorrectWords] = useState<IncorrectWord[]>([]);
+  const [wordsToResolve, setWordsToResolve] = useState<Word[]>([]);
+  const [showResolveDialog, setShowResolveDialog] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const [mode, setMode] = useState<QuizMode>('KtoE');
@@ -60,13 +63,27 @@ export default function QuizPage() {
       setPhase('error');
       return;
     }
-    StageService.getStageById(stageId)
-      .then((s) => {
+
+    const sId = Number(stageId);
+
+    Promise.all([
+      StageService.getStageById(sId),
+      ProgressService.getIncorrectWords()
+    ])
+      .then(([s, allIw]) => {
         setStage(s);
-        setPhase('mode-select');
+        // Filter incorrect words for this stage
+        const stageIw = allIw.filter(iw => s.words.some(w => w.wordId === iw.wordId));
+        setIncorrectWords(stageIw);
+
+        if (stageIw.length > 0) {
+          setPhase('incorrect-note');
+        } else {
+          setPhase('mode-select');
+        }
       })
       .catch(() => {
-        setErrorMsg('스테이지를 불러오지 못했습니다.');
+        setErrorMsg('데이터를 불러오지 못했습니다.');
         setPhase('error');
       });
   }, [stageId]);
@@ -124,18 +141,20 @@ export default function QuizPage() {
       setAnswer('');
       setSubmitted(false);
     } else {
-      saveProgress(results);
+      const finalResults = [...results];
+      saveProgress(finalResults);
       setPhase('result');
     }
   };
 
   const saveProgress = (finalResults: QuestionResult[]) => {
     if (!user || !stageId) return;
+    const sId = Number(stageId);
     const score = finalResults.filter((r) => r.isCorrect).length;
 
-    // Save quiz session — persists score and per-answer details (including incorrect-word tracking)
+    // Save quiz session
     QuizSessionService.saveQuizResult({
-      stageId,
+      stageId: sId,
       score,
       totalQuestions: finalResults.length,
       answers: finalResults.map((r) => ({
@@ -146,7 +165,35 @@ export default function QuizPage() {
     }).catch(() => {});
 
     // Mark stage as completed
-    ProgressService.markStageCompleted(stageId).catch(() => {});
+    ProgressService.markStageCompleted(sId).catch(() => {});
+
+    // Identify words to resolve (was incorrect, now correct)
+    const correctIds = new Set(finalResults.filter((r) => r.isCorrect).map((r) => r.word.wordId));
+    const toResolve =
+      stage?.words.filter(
+        (w) => correctIds.has(w.wordId) && incorrectWords.some((iw) => iw.wordId === w.wordId),
+      ) ?? [];
+
+    if (toResolve.length > 0) {
+      setWordsToResolve(toResolve);
+      setShowResolveDialog(true);
+    }
+  };
+
+  const handleResolve = async () => {
+    try {
+      await Promise.all(wordsToResolve.map((w) => ProgressService.resolveIncorrectWord(w.wordId)));
+    } catch (err) {
+      console.error('Failed to resolve words:', err);
+      // If in DEV mode, proceed to update local state anyway so the mock UI works
+      if (!import.meta.env.DEV) return;
+    }
+
+    // Sync local state after resolution (or mock resolution)
+    setIncorrectWords((prev) =>
+      prev.filter((iw) => !wordsToResolve.some((w) => w.wordId === iw.wordId)),
+    );
+    setShowResolveDialog(false);
   };
 
   const handleRetry = () => {
@@ -154,7 +201,11 @@ export default function QuizPage() {
     setResults([]);
     setAnswer('');
     setSubmitted(false);
-    setPhase('mode-select');
+    if (incorrectWords.length > 0) {
+      setPhase('incorrect-note');
+    } else {
+      setPhase('mode-select');
+    }
   };
 
   const handleExitQuiz = () => {
@@ -197,6 +248,51 @@ export default function QuizPage() {
             className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
           >
             돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Incorrect Note ───────────────────────────────────────
+
+  if (phase === 'incorrect-note' && stage) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 max-w-sm w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <BookOpen className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Incorrect Note</h2>
+              <p className="text-sm text-slate-500">지난번에 틀린 단어들입니다</p>
+            </div>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto pr-1 flex flex-col gap-2 mb-8">
+            {incorrectWords.map((iw) => {
+              const word = stage.words.find((w) => w.wordId === iw.wordId);
+              if (!word) return null;
+              return (
+                <div
+                  key={iw.incorrectWordId}
+                  className="p-3 bg-amber-50 rounded-xl flex justify-between items-center animate-in fade-in slide-in-from-bottom-2"
+                >
+                  <span className="font-bold text-slate-900">{word.word}</span>
+                  <span className="text-sm text-slate-500">{word.meaning}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setPhase('mode-select')}
+            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all flex items-center justify-center gap-2"
+          >
+            모드 선택으로 계속하기
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -455,114 +551,126 @@ export default function QuizPage() {
       : 'text-red-500';
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-
-        {/* Score summary
-            Mobile : 텍스트 중앙, 버튼 전체 너비
-            PC     : 점수(좌) + 버튼(우) 가로 배치 */}
-        <div
-          role="region"
-          aria-label="퀴즈 결과 요약"
-          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6"
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="text-center md:text-left">
-              <p className="text-slate-500 text-sm mb-1">최종 점수</p>
-              <p
-                className="text-4xl font-bold text-slate-900 mb-1"
-                aria-label={`${total}문제 중 ${score}문제 정답`}
-              >
-                {score} <span aria-hidden="true" className="text-slate-300">/</span> {total}
-              </p>
-              <p className={`text-sm font-medium ${scoreLabelColor}`}>{scoreLabel}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+        {/* Header with Trophy */}
+        <div className="bg-white p-4 pt-8 text-center relative border-b border-slate-50">
+          <div className="flex justify-center mb-1">
+            <div className="bg-amber-50 p-2 rounded-xl animate-bounce-subtle">
+              <Trophy className="w-6 h-6 text-amber-600" />
             </div>
-            <div className="flex gap-2 md:flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                title="홈 화면으로 이동합니다"
-                aria-label="홈으로 이동"
-                className="flex-1 md:flex-none md:px-6 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium transition-colors flex items-center justify-center gap-1.5 text-sm"
-              >
-                <Home aria-hidden="true" className="w-4 h-4" />홈
-              </button>
-              <button
-                type="button"
-                onClick={handleRetry}
-                title="모드 선택부터 다시 시작합니다"
-                aria-label="퀴즈 다시 풀기"
-                className="flex-1 md:flex-none md:px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors flex items-center justify-center gap-1.5 text-sm"
-              >
-                <RotateCcw aria-hidden="true" className="w-4 h-4" />다시 풀기
-              </button>
-            </div>
+          </div>
+          <h2 className={`text-lg font-black mb-0.5 ${scoreLabelColor}`}>{scoreLabel}</h2>
+          <div className="flex justify-center items-baseline gap-1.5">
+            <span className="text-3xl font-black text-slate-900">{score}</span>
+            <span className="text-slate-300 text-lg font-black">/</span>
+            <span className="text-lg font-black text-slate-400">{total}</span>
           </div>
         </div>
 
-        {/* Per-question breakdown
-            Mobile        : 1열 가로 리스트 (grid-cols-1)
-            md  768px+    : 3열 정사각형 카드 → 3×3 + 1
-            lg  1024px+   : 4열 정사각형 카드 → 4×2 + 2
-            xl  1280px+   : 5열 정사각형 카드 → 5×2      */}
-        <ol
-          aria-label="문항별 결과"
-          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
-        >
-          {results.map((r, i) => (
-            <li
-              key={r.word.wordId || i}
-              aria-label={`${i + 1}번 문제: ${r.word.word} — ${r.isCorrect ? '정답' : '오답'}`}
-              className={`bg-white rounded-xl shadow-sm border border-slate-100
-                px-4 py-3 flex items-start gap-3
-                md:aspect-square md:relative md:flex-col md:items-center md:justify-center md:text-center md:p-4 md:gap-2
-                ${r.isCorrect ? '' : 'md:border-red-100'}`}
-            >
-              {/* 번호: 모바일 인라인 / PC 좌상단 절대 위치 */}
-              <span
-                aria-hidden="true"
-                className="text-xs text-slate-400 w-5 text-center shrink-0 mt-0.5
-                           md:absolute md:top-2.5 md:left-3 md:w-auto md:mt-0"
+        {/* Scrollable Result List */}
+        <div className="flex-1 overflow-y-auto p-8 pt-12">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">상세 결과</h3>
+          <div className="flex flex-col gap-3">
+            {results.map((r, i) => (
+              <div
+                key={i}
+                className={`p-4 rounded-2xl border flex items-center gap-4 bg-white ${
+                  r.isCorrect ? 'border-green-100' : 'border-slate-100'
+                }`}
               >
-                {i + 1}
-              </span>
-
-              {/* O/X 아이콘: 모바일 소형 / PC 대형 */}
-              {r.isCorrect ? (
-                <CheckCircle
-                  aria-hidden="true"
-                  className="text-green-500 shrink-0 mt-0.5 w-5 h-5 md:w-10 md:h-10 md:mt-0"
-                />
-              ) : (
-                <XCircle
-                  aria-hidden="true"
-                  className="text-red-400 shrink-0 mt-0.5 w-5 h-5 md:w-10 md:h-10 md:mt-0"
-                />
-              )}
-
-              {/* 단어 정보 */}
-              <div className="min-w-0 md:w-full">
-                <p className="font-medium text-slate-900 text-sm md:text-base md:font-bold">
-                  {r.word.word}
-                </p>
-                <p className="text-xs text-slate-500 truncate md:text-sm md:whitespace-normal md:line-clamp-2">
-                  {r.word.meaning}
-                </p>
-                {!r.isCorrect && (
-                  <p className="text-xs text-red-400 mt-0.5 truncate md:whitespace-normal md:line-clamp-1">
-                    내 답: {r.userAnswer || '(없음)'}
-                  </p>
-                )}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                    r.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                  }`}
+                >
+                  {r.isCorrect ? (
+                    <CheckCircle className="w-5 h-5" />
+                  ) : (
+                    <XCircle className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex justify-between items-start mb-0.5">
+                    <p className="font-bold text-slate-900 truncate">{r.word.word}</p>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                      Q.{i + 1}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-x-3 gap-y-1">
+                    {r.isCorrect ? (
+                      <p className="text-sm text-slate-500 font-medium">{r.word.meaning}</p>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs line-through text-slate-300 decoration-red-300">
+                          {r.userAnswer || '(공백)'}
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-red-300" />
+                        <span className="text-xs font-bold text-red-600">{r.correctAnswer}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              <span className="sr-only">
-                {r.isCorrect ? '정답' : `오답, 정답은 ${r.correctAnswer}`}
-              </span>
-            </li>
-          ))}
-        </ol>
-
+        {/* Footer Buttons */}
+        <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/select')}
+            className="flex-1 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
+          >
+            <Home className="w-5 h-5" />
+            홈으로
+          </button>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-5 h-5" />
+            다시 풀기
+          </button>
+        </div>
       </div>
+
+      {/* Resolve Dialog Overlay */}
+      {showResolveDialog && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center p-6 bg-white/20 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 animate-in zoom-in-90 duration-300">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Great Progress!</h3>
+              <p className="text-slate-500 text-sm mb-6">
+                이전에 틀렸던 {wordsToResolve.length}개의 단어를 맞췄어요!<br />
+                오답노트에서 제거할까요?
+              </p>
+
+              <div className="w-full flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleResolve}
+                  className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all"
+                >
+                  제거하기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowResolveDialog(false)}
+                  className="w-full py-4 rounded-2xl bg-white text-slate-400 font-bold hover:text-slate-600 transition-all"
+                >
+                  나중에 하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
