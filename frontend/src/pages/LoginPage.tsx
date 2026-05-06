@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import { AuthService } from '../services/AuthService';
@@ -10,53 +9,25 @@ export default function LoginPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [signingIn, setSigningIn] = useState(false);
-  const [showAdminDialog, setShowAdminDialog] = useState(false);
-  const [adminKey, setAdminKey] = useState('');
 
   useEffect(() => {
-    if (!loading && user && !signingIn && !showAdminDialog) {
+    if (!loading && user && !signingIn) {
       navigate(user.role === 'admin' ? '/admin' : '/', { replace: true });
     }
-  }, [user, loading, navigate, signingIn, showAdminDialog]);
+  }, [user, loading, navigate, signingIn]);
 
   if (loading) return <LoadingSpinner />;
 
   const handleGoogleSignIn = async () => {
     setSigningIn(true);
     try {
-      const appUser = await AuthService.signInWithGoogle();
-      if (appUser.role === 'admin') {
-        setShowAdminDialog(true);
-      } else {
-        navigate('/', { replace: true });
-      }
+      await AuthService.startGoogleSignIn();
     } catch (err) {
-      const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/popup-blocked') {
-        toast.error('로그인에 실패했습니다');
-      } else {
-        toast.error(err instanceof Error ? err.message : '로그인에 실패했습니다');
-      }
-    } finally {
+      toast.error(err instanceof Error ? err.message : '로그인에 실패했습니다');
       setSigningIn(false);
+    } finally {
+      if (document.visibilityState === 'visible') setSigningIn(false);
     }
-  };
-
-  const handleAdminConfirm = async () => {
-    if (!AuthService.verifyAdminKey(adminKey)) {
-      await AuthService.signOut();
-      toast.error('비밀 키가 올바르지 않습니다');
-      setShowAdminDialog(false);
-      setAdminKey('');
-      return;
-    }
-    navigate('/admin', { replace: true });
-  };
-
-  const handleAdminCancel = async () => {
-    await AuthService.signOut();
-    setShowAdminDialog(false);
-    setAdminKey('');
   };
 
   return (
@@ -80,40 +51,6 @@ export default function LoginPage() {
           {signingIn ? 'Signing in...' : 'Sign in with Google'}
         </button>
       </div>
-
-      {showAdminDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
-            <div className="flex items-center gap-2 mb-6">
-              <ShieldCheck className="text-indigo-600 w-6 h-6" />
-              <h2 className="text-xl font-bold text-slate-900">관리자 인증</h2>
-            </div>
-            <input
-              type="password"
-              value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') void handleAdminConfirm(); }}
-              placeholder="비밀 키를 입력하세요"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2 mb-6 outline-none focus:ring-2 focus:ring-indigo-500"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={handleAdminCancel}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleAdminConfirm}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

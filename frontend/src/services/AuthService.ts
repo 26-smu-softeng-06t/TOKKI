@@ -1,35 +1,68 @@
-import { auth, googleProvider } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import type { NextOrObserver, User as FirebaseUser } from 'firebase/auth';
-import { UserService } from './UserService';
-import type { AppUser } from '../types';
+import axios from 'axios';
+import http, { sessionApiBaseUrl, sessionBackendBaseUrl, setStoredAccessToken } from '../lib/axios';
+import type { AppUser, UserRole } from '../types';
 
-const DEV = !import.meta.env.VITE_FIREBASE_API_KEY;
+interface AuthMeResponse {
+  authenticated: boolean;
+  provider?: string;
+  providerId?: string;
+  email?: string;
+  role?: UserRole;
+}
+
+interface TokenResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+}
+
+const sessionHttp = axios.create({
+  baseURL: sessionApiBaseUrl,
+  withCredentials: true,
+});
+
+sessionHttp.interceptors.response.use((response) => response.data?.data ?? response.data);
 
 export class AuthService {
-  static async signInWithGoogle(): Promise<AppUser> {
-    if (DEV) return { uid: 'dev-uid', email: 'dev@localhost', role: 'user' };
-    const result = await signInWithPopup(auth, googleProvider);
-    const { uid, email } = result.user;
-    await UserService.upsertUser(uid, email ?? '');
-    const userData = await UserService.getUser(uid);
-    return { uid, email: email ?? '', role: userData.role };
+  static async startGoogleSignIn(): Promise<void> {
+    const response = (await http.get('/auth/google-url')) as unknown as { authorizationUrl: string };
+    const authorizationUrl = response.authorizationUrl || '/oauth2/authorization/google';
+    window.location.href = authorizationUrl.startsWith('http')
+      ? authorizationUrl
+      : `${sessionBackendBaseUrl}${authorizationUrl}`;
   }
 
-  static verifyAdminKey(inputKey: string): boolean {
-    return inputKey === import.meta.env.VITE_ADMIN_SECRET_KEY;
+  static async getCurrentUser(): Promise<AppUser | null> {
+    const currentUser = (await http.get('/auth/me')) as unknown as AuthMeResponse;
+    if (!currentUser.authenticated || !currentUser.providerId) return null;
+    return {
+      uid: currentUser.providerId,
+      email: currentUser.email ?? '',
+      role: currentUser.role ?? 'user',
+    };
+  }
+
+  static async issueToken(): Promise<AppUser> {
+    const token = (await sessionHttp.post('/auth/token')) as unknown as TokenResponse;
+    setStoredAccessToken(token.accessToken);
+    const user = await this.getCurrentUser();
+    if (!user) throw new Error('AUTH_SESSION_NOT_FOUND');
+    return user;
+  }
+
+  static async registerAdmin(adminSecretKey: string): Promise<AppUser> {
+    const token = (await http.post('/auth/admin/register', { adminSecretKey })) as unknown as TokenResponse;
+    setStoredAccessToken(token.accessToken);
+    const user = await this.getCurrentUser();
+    if (!user) throw new Error('AUTH_SESSION_NOT_FOUND');
+    return user;
   }
 
   static async signOut(): Promise<void> {
-    if (DEV) return;
-    await signOut(auth);
-  }
-
-  static onAuthStateChanged(callback: NextOrObserver<FirebaseUser>): () => void {
-    if (DEV) {
-      if (typeof callback === 'function') setTimeout(() => callback(null), 0);
-      return () => {};
+    try {
+      await http.post('/auth/logout');
+    } finally {
+      setStoredAccessToken(null);
     }
-    return onAuthStateChanged(auth, callback);
   }
 }

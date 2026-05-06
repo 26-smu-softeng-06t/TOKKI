@@ -7,6 +7,9 @@ import com.tokki.auth.service.AuthService;
 import com.tokki.common.api.ApiResponse;
 import com.tokki.common.api.ApiResponses;
 import com.tokki.config.properties.TokkiAdminProperties;
+import com.tokki.domain.User;
+import com.tokki.exception.AppException;
+import com.tokki.exception.ErrorCode;
 import com.tokki.security.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,13 +19,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -64,14 +67,17 @@ public class AuthController {
         }
 
         OAuth2User user = (OAuth2User) authentication.getPrincipal();
+        String providerId = stringAttribute(user, "sub");
+        Optional<User> savedUser = authService.findUser(providerId);
 
         return ResponseEntity.ok(ApiResponses.data(Map.of(
                 "authenticated", true,
                 "provider", "google",
-                "providerId", stringAttribute(user, "sub"),
+                "providerId", providerId,
                 "email", stringAttribute(user, "email"),
                 "name", stringAttribute(user, "name"),
-                "picture", stringAttribute(user, "picture")
+                "picture", stringAttribute(user, "picture"),
+                "role", savedUser.map(value -> value.getRole().name()).orElse("user")
         )));
     }
 
@@ -105,18 +111,18 @@ public class AuthController {
 
     @PostMapping("/admin/register")
     public ApiResponse<TokenResponse> registerAdmin(
-            @AuthenticationPrincipal AuthUser authUser,
+            Authentication authentication,
             @Valid @RequestBody AdminRegisterRequest request
     ) {
-        String token = authService.registerAdmin(authUser.getUid(), request.adminSecretKey());
+        String token = authService.registerAdmin(resolveUid(authentication), request.adminSecretKey());
         return new ApiResponse<>(TokenResponse.of(token, jwtExpirationMs / 1000));
     }
 
     @PostMapping("/token")
     public ApiResponse<TokenResponse> issueToken(
-            @AuthenticationPrincipal AuthUser authUser
+            Authentication authentication
     ) {
-        String token = authService.issueToken(authUser.getUid());
+        String token = authService.issueToken(resolveUid(authentication));
         return new ApiResponse<>(TokenResponse.of(token, jwtExpirationMs / 1000));
     }
 
@@ -134,6 +140,16 @@ public class AuthController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && authentication.getPrincipal() instanceof AuthUser;
+    }
+
+    private String resolveUid(Authentication authentication) {
+        if (isBearerAuthenticated(authentication)) {
+            return ((AuthUser) authentication.getPrincipal()).getUid();
+        }
+        if (isOAuth2Authenticated(authentication)) {
+            return stringAttribute((OAuth2User) authentication.getPrincipal(), "sub");
+        }
+        throw new AppException(ErrorCode.UNAUTHORIZED);
     }
 
     private static String stringAttribute(OAuth2User user, String name) {

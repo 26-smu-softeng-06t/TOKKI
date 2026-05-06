@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Settings, Database, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
-import { AuthService } from '../services/AuthService';
 import { StageService } from '../services/StageService';
 import type { StageInput, DifficultyLevel } from '../types';
 
@@ -22,14 +21,14 @@ const SEED_DATA: StageInput[] = (['easy', 'medium', 'hard'] as DifficultyLevel[]
 );
 
 export default function MainPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [seeding, setSeeding] = useState(false);
 
   if (!user) return null;
 
   const handleLogout = async () => {
-    await AuthService.signOut();
+    await logout();
     navigate('/login', { replace: true });
   };
 

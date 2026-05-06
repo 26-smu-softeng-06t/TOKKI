@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS rankings (
     word        VARCHAR(100)     NOT NULL,
     meaning     VARCHAR(255)     NOT NULL,
     miss_count  INT UNSIGNED     NOT NULL,
-    rank        TINYINT UNSIGNED NOT NULL,
+    `rank`      TINYINT UNSIGNED NOT NULL,
     updated_at  DATETIME         NOT NULL,
     FOREIGN KEY (word_id) REFERENCES words(word_id)
 );
