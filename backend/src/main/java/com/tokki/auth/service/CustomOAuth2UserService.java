@@ -1,6 +1,7 @@
 package com.tokki.auth.service;
 
 import com.tokki.auth.oauth.OAuth2UserAttributeMapperRegistry;
+import com.tokki.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final OAuth2UserAttributeMapperRegistry attributeMapperRegistry;
+    private final AuthService authService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -35,8 +37,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 mappedUser.attributes().providerId(),
                 mappedUser.attributes().email());
 
+        User user = authService.upsertOAuth2User(mappedUser.attributes());
+
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name().toUpperCase())),
                 attributes,
                 mappedUser.nameAttributeKey()
         );

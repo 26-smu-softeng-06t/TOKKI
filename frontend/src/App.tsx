@@ -11,6 +11,7 @@ import QuizPage from './pages/QuizPage';
 import AdminPage from './pages/AdminPage';
 import RankingPage from './pages/RankingPage';
 import PvpPage from './pages/PvpPage';
+import LoginCallbackPage from './pages/LoginCallbackPage';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Toaster position="top-center" />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/callback" element={<LoginCallbackPage />} />
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<MainPage />} />
             <Route path="/select" element={<SelectPage />} />

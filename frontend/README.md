@@ -4,7 +4,7 @@ This package is ready for route-level React implementation without coupling UI c
 
 ## Runtime contract
 
-- API calls should go through `src/api/axios.js`.
+- API calls should go through `src/lib/axios.ts`.
 - In local development, Vite proxies `/api` and `/oauth2` to `VITE_API_BASE_URL`.
 - OAuth login starts at `GET /api/auth/google-url` and redirects to `/oauth2/authorization/google`.
 - Auth status is available at `GET /api/auth/me`.

@@ -23,6 +23,7 @@ public class User {
     @Column(length = 100)
     private String email;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private UserRole role = UserRole.user;

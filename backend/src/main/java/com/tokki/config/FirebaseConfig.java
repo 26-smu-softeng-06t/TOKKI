@@ -8,10 +8,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -20,6 +23,9 @@ public class FirebaseConfig {
 
     @Value("${firebase.project-id}")
     private String projectId;
+
+    @Value("${firebase.service-account-path:}")
+    private String serviceAccountPath;
 
     @Value("${firebase.client-email}")
     private String clientEmail;
@@ -32,7 +38,20 @@ public class FirebaseConfig {
         if (!FirebaseApp.getApps().isEmpty()) {
             return;
         }
-        if (projectId.isBlank() || clientEmail.isBlank() || privateKey.isBlank()) {
+
+        if (StringUtils.hasText(serviceAccountPath)) {
+            Path credentialsPath = resolveServiceAccountPath(serviceAccountPath);
+            try (InputStream serviceAccount = Files.newInputStream(credentialsPath)) {
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+                FirebaseApp.initializeApp(options);
+                log.info("Firebase initialized from service-account file: {}", credentialsPath.getFileName());
+            }
+            return;
+        }
+
+        if (!StringUtils.hasText(projectId) || !StringUtils.hasText(clientEmail) || !StringUtils.hasText(privateKey)) {
             log.warn("Firebase credentials not configured — Firebase auth disabled");
             return;
         }
@@ -44,6 +63,20 @@ public class FirebaseConfig {
                 .build();
         FirebaseApp.initializeApp(options);
         log.info("Firebase initialized for project: {}", projectId);
+    }
+
+    private Path resolveServiceAccountPath(String configuredPath) throws IOException {
+        Path path = Path.of(configuredPath);
+        if (Files.exists(path)) {
+            return path.toAbsolutePath().normalize();
+        }
+
+        Path parentRelativePath = Path.of("..").resolve(configuredPath).normalize();
+        if (Files.exists(parentRelativePath)) {
+            return parentRelativePath.toAbsolutePath().normalize();
+        }
+
+        throw new IOException("Firebase service account file not found: " + configuredPath);
     }
 
     private String buildServiceAccountJson(String projectId, String clientEmail, String privateKey) {

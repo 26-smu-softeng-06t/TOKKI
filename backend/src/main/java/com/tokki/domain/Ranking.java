@@ -24,7 +24,7 @@ public class Ranking {
     @Column(nullable = false)
     private Integer score;
 
-    @Column(nullable = false)
+    @Column(name = "rank_position", nullable = false)
     private Integer rank;
 
     @Column(nullable = false, length = 20)

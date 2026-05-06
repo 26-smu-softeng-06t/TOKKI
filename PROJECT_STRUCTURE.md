@@ -10,6 +10,7 @@ TOKKI/
       auth/                 Google OAuth2, JWT, role checks
       common/               Shared errors, responses, utilities
       config/               Spring configuration
+      controller/           REST controllers
       quiz/                 Quiz sessions, answers, scoring
       user/                 User profile and role domain
       word/                 Vocabulary domain
@@ -19,9 +20,10 @@ TOKKI/
   frontend/                 React client
     public/                 Static public assets
     src/
-      api/                  Axios/API client layer
       components/           Reusable UI components
-      features/             Feature-level frontend modules
+      context/              Authentication context
+      hooks/                Shared React hooks
+      lib/                  Axios/API client and browser integrations
       layouts/              Shared page layouts
       pages/                Route-level pages
       routes/               Router definitions
@@ -34,7 +36,7 @@ The requirements and design documents currently live in the sibling `../Software
 
 ## Implementation boundaries
 
-- Frontend implementation should keep backend communication behind `frontend/src/api`.
+- Frontend implementation should keep backend communication behind `frontend/src/lib/axios.ts` and service classes in `frontend/src/services`.
 - Feature-specific React state and screens should live under `frontend/src/features` and `frontend/src/pages`.
 - Backend API responses should use the shared `com.tokki.common.api` response wrappers.
 - OAuth provider-specific parsing belongs under `com.tokki.auth.oauth`, so adding another provider does not require changing controller code.
