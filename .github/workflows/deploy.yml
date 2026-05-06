@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - dev
+  workflow_dispatch:
 
 # 동시 배포 방지
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build-and-deploy:
@@ -48,6 +52,18 @@ jobs:
         run: |
           ls -lh backend/build/libs/*.jar
 
+      - name: Package backend app.jar
+        run: |
+          mkdir -p deploy/backend
+          JAR_FILE="$(find backend/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)"
+          if [ -z "$JAR_FILE" ]; then
+            echo "No executable backend JAR found in backend/build/libs"
+            exit 1
+          fi
+          cp "$JAR_FILE" deploy/backend/app.jar
+          test -s deploy/backend/app.jar
+          ls -lh deploy/backend/app.jar
+
       # ==========================================
       # 3. 프론트엔드 빌드 (React + Vite)
       # ==========================================
@@ -81,23 +97,21 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          source: "backend/build/libs/*.jar"
+          source: "deploy/backend/app.jar"
           target: "/opt/tokki/backend/"
-          strip_components: 3
+          strip_components: 2
           overwrite: true
 
-      - name: Rename JAR to app.jar on server
+      - name: Verify backend app.jar on server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # 빌드된 jar 파일을 app.jar로 이름 통일
-            mv /opt/tokki/backend/*.jar /opt/tokki/backend/app.jar 2>/dev/null || true
             # 로그 디렉토리 확인
             mkdir -p /opt/tokki/backend/logs
-            echo "JAR rename complete"
+            test -s /opt/tokki/backend/app.jar
             ls -lh /opt/tokki/backend/app.jar
 
       - name: Transfer frontend dist to server
@@ -109,17 +123,6 @@ jobs:
           source: "frontend/dist/*"
           target: "/opt/tokki/frontend/dist/"
           strip_components: 2
-          overwrite: true
-
-      - name: Transfer pm2 ecosystem config to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "pm2/ecosystem.config.js"
-          target: "/opt/tokki/backend/"
-          strip_components: 1
           overwrite: true
 
       # ==========================================
@@ -139,7 +142,7 @@ jobs:
             if pm2 describe tokki-backend > /dev/null 2>&1; then
               pm2 restart tokki-backend --update-env
             else
-              pm2 start ecosystem.config.js
+              pm2 start java --name tokki-backend --time -- -jar app.jar
               pm2 save
             fi
 
