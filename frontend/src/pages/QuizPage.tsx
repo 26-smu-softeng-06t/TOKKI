@@ -437,14 +437,18 @@ export default function QuizPage() {
   const total = results.length;
 
   const scoreLabel =
-    score === total
+    total === 0
+      ? '—'
+      : score === total
       ? '완벽해요! 🎉'
       : score >= Math.ceil(total * 0.7)
       ? '잘했어요!'
       : '더 연습해봐요';
 
   const scoreLabelColor =
-    score === total
+    total === 0
+      ? 'text-slate-400'
+      : score === total
       ? 'text-green-600'
       : score >= Math.ceil(total * 0.7)
       ? 'text-amber-600'
@@ -507,7 +511,7 @@ export default function QuizPage() {
         >
           {results.map((r, i) => (
             <li
-              key={r.word.wordId}
+              key={r.word.wordId || i}
               aria-label={`${i + 1}번 문제: ${r.word.word} — ${r.isCorrect ? '정답' : '오답'}`}
               className={`bg-white rounded-xl shadow-sm border border-slate-100
                 px-4 py-3 flex items-start gap-3

@@ -1,6 +1,42 @@
 import http from '../lib/axios';
 import { MOCK_STAGE } from '../api/mockData';
-import type { Stage, Word, StageInput } from '../types';
+import type { Stage, DifficultyLevel, StageInput } from '../types';
+
+/**
+ * Normalizes raw API responses into the frontend Stage type.
+ * Handles two backend formats:
+ *  - New schema  : { stageId, difficulty, stageNumber, createdAt, updatedAt }
+ *                  words: { wordId, stageId, word, meaning, example, orderIndex }
+ *  - Old backend : { id, title, description, level, createdAt }
+ *                  words: { id, stageId, korean, meaning, example, imageUrl }
+ *    (old backend: `korean` = Korean text ≡ frontend `meaning`;
+ *                  `meaning` = English text ≡ frontend `word`)
+ */
+function normalizeStage(
+  stageRaw: unknown,
+  stageId: string,
+  wordsRaw: unknown,
+): Stage {
+  const s = stageRaw as Record<string, unknown>;
+  const ws = ((wordsRaw as unknown[]) ?? []) as Record<string, unknown>[];
+
+  return {
+    stageId: String(s.stageId ?? s.id ?? stageId),
+    difficulty: (s.difficulty ?? 'easy') as DifficultyLevel,
+    stageNumber: Number(s.stageNumber ?? s.level ?? 0),
+    createdAt: String(s.createdAt ?? ''),
+    updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
+    words: ws.map((w, i) => ({
+      wordId: String(w.wordId ?? w.id ?? ''),
+      stageId: String(w.stageId ?? stageId),
+      // New schema has `word` (English); old backend has `meaning` (English) + `korean` (Korean)
+      word: String(w.word ?? ('korean' in w ? w.meaning : '') ?? ''),
+      meaning: String(('korean' in w ? w.korean : w.meaning) ?? ''),
+      example: (w.example as string | null) ?? null,
+      orderIndex: Number(w.orderIndex ?? w.order_index ?? i + 1),
+    })),
+  };
+}
 
 export class StageService {
   static async getStages(): Promise<Stage[]> {
@@ -9,11 +45,11 @@ export class StageService {
 
   static async getStageById(stageId: string): Promise<Stage> {
     try {
-      const [stageData, wordsData] = await Promise.all([
+      const [stageRaw, wordsRaw] = await Promise.all([
         http.get(`/stages/${stageId}`),
         http.get(`/stages/${stageId}/words`),
       ]);
-      return { ...(stageData as unknown as Stage), words: wordsData as unknown as Word[] };
+      return normalizeStage(stageRaw, stageId, wordsRaw);
     } catch (err) {
       if (import.meta.env.DEV) {
         console.warn('[DEV] Stage API unavailable — using mock data');
