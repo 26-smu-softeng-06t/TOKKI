@@ -147,7 +147,6 @@ fabric.properties
 
 # Package Files #
 *.jar
-!backend/gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
