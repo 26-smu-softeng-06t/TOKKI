@@ -6,7 +6,7 @@ export class UserService {
     return (await http.get(`/users/${uid}`)) as unknown as User;
   }
 
-  static async upsertUser(uid: string, email: string): Promise<void> {
-    await http.post('/users', { uid, email });
+  static async upsertUser(nickname: string, email: string): Promise<void> {
+    await http.put('/users/me', { nickname, email });
   }
 }

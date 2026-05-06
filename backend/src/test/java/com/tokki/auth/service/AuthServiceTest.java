@@ -31,7 +31,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void promotesUserAndReturnsAdminTokenWhenSecretMatches() {
+    void promotesUserAndReturnsAdminWhenSecretMatches() {
         ReflectionTestUtils.setField(authService, "adminSecretKey", "server-secret");
         User user = User.builder()
                 .uid("uid-1")
@@ -40,12 +40,10 @@ class AuthServiceTest {
                 .role(UserRole.user)
                 .build();
         when(userRepository.findById("uid-1")).thenReturn(Optional.of(user));
-        when(jwtProvider.generateToken("uid-1", "admin@example.com", UserRole.admin))
-                .thenReturn("jwt-token");
+        when(userRepository.save(user)).thenReturn(user);
+        User registeredUser = authService.registerAdmin("uid-1", "server-secret");
 
-        String token = authService.registerAdmin("uid-1", "server-secret");
-
-        assertThat(token).isEqualTo("jwt-token");
+        assertThat(registeredUser).isSameAs(user);
         assertThat(user.getRole()).isEqualTo(UserRole.admin);
         verify(userRepository).save(user);
     }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth, firebaseConfigured } from './firebase';
 
 const ACCESS_TOKEN_KEY = 'tokki.accessToken';
 const rawApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
@@ -32,9 +33,12 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = getStoredAccessToken();
+apiClient.interceptors.request.use(async (config) => {
+  const token = firebaseConfigured && auth.currentUser
+    ? await auth.currentUser.getIdToken()
+    : getStoredAccessToken();
   if (token) {
+    setStoredAccessToken(token);
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

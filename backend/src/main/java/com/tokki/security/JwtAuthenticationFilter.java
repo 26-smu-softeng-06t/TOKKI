@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.tokki.exception.ErrorCode;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,10 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = resolveToken(request);
-        if (token != null && jwtProvider.isJwtToken(token)) {
+        if (token != null) {
             try {
                 jwtProvider.setAuthentication(token);
+            } catch (ExpiredJwtException e) {
+                request.setAttribute(AuthFailureAttributes.ERROR_CODE, ErrorCode.TOKEN_EXPIRED);
+                log.warn("JWT authentication failed: {}", e.getMessage());
             } catch (Exception e) {
+                request.setAttribute(AuthFailureAttributes.ERROR_CODE, ErrorCode.TOKEN_INVALID);
                 log.warn("JWT authentication failed: {}", e.getMessage());
             }
         }

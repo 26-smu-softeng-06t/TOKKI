@@ -1,6 +1,7 @@
 package com.tokki.service;
 
 import com.tokki.domain.User;
+import com.tokki.domain.UserRole;
 import com.tokki.dto.request.UpsertUserRequest;
 import com.tokki.dto.response.UserResponse;
 import com.tokki.exception.AppException;
@@ -37,5 +38,13 @@ public class UserService {
         return userRepository.findById(uid)
                 .map(UserResponse::from)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponse getUser(String requestedUid, String requesterUid, UserRole requesterRole) {
+        if (!requestedUid.equals(requesterUid) && requesterRole != UserRole.admin) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+        return getUser(requestedUid);
     }
 }

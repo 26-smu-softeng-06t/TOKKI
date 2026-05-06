@@ -28,4 +28,11 @@ public class UserController {
     public ResponseEntity<UserResponse> getMe(@AuthenticationPrincipal AuthUser authUser) {
         return ResponseEntity.ok(userService.getUser(authUser.getUid()));
     }
+
+    @GetMapping("/{uid}")
+    public ResponseEntity<UserResponse> getUser(
+            @PathVariable String uid,
+            @AuthenticationPrincipal AuthUser authUser) {
+        return ResponseEntity.ok(userService.getUser(uid, authUser.getUid(), authUser.getRole()));
+    }
 }

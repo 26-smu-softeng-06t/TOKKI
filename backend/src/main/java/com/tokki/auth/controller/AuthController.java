@@ -8,6 +8,7 @@ import com.tokki.common.api.ApiResponse;
 import com.tokki.common.api.ApiResponses;
 import com.tokki.config.properties.TokkiAdminProperties;
 import com.tokki.domain.User;
+import com.tokki.dto.response.UserResponse;
 import com.tokki.exception.AppException;
 import com.tokki.exception.ErrorCode;
 import com.tokki.security.AuthUser;
@@ -110,12 +111,12 @@ public class AuthController {
     }
 
     @PostMapping("/admin/register")
-    public ApiResponse<TokenResponse> registerAdmin(
+    public ApiResponse<UserResponse> registerAdmin(
             Authentication authentication,
             @Valid @RequestBody AdminRegisterRequest request
     ) {
-        String token = authService.registerAdmin(resolveUid(authentication), request.adminSecretKey());
-        return new ApiResponse<>(TokenResponse.of(token, jwtExpirationMs / 1000));
+        User user = authService.registerAdmin(resolveUid(authentication), request.adminSecretKey());
+        return new ApiResponse<>(UserResponse.from(user));
     }
 
     @PostMapping("/token")

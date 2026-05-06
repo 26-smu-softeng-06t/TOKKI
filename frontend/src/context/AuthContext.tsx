@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     if (DEV) return DEV_USER;
+    await AuthService.waitForFirebaseUser();
     const currentUser = await AuthService.getCurrentUser();
     setUser(currentUser);
     return currentUser;
