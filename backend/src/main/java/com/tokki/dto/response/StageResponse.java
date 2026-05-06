@@ -35,6 +35,6 @@ public class StageResponse {
         if ("easy".equals(title) || "medium".equals(title) || "hard".equals(title)) {
             return title;
         }
-        return "easy";
+        return null;
     }
 }
