@@ -22,7 +22,7 @@ public class Word {
     private Stage stage;
 
     @Column(nullable = false, length = 100)
-    private String korean;
+    private String word;
 
     @Column(nullable = false, length = 200)
     private String meaning;
@@ -32,6 +32,9 @@ public class Word {
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @Column(name = "order_index", nullable = false)
+    private Integer orderIndex;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

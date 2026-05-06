@@ -49,7 +49,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function AdminPage() {
     }
   }
 
-  async function handleDelete(stageId: string) {
+  async function handleDelete(stageId: number) {
     if (!confirm('삭제하시겠습니까?')) return;
     try {
       await StageService.deleteStage(stageId);

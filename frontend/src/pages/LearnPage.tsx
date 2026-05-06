@@ -23,7 +23,7 @@ export default function LearnPage() {
 
     const load = async () => {
       try {
-        const stage = await StageService.getStageById(stageId);
+        const stage = await StageService.getStageById(Number(stageId));
         if (cancelled) return;
         const sorted = [...stage.words].sort((a, b) => a.orderIndex - b.orderIndex);
         setWords(sorted);

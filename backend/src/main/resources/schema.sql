@@ -20,12 +20,13 @@ CREATE TABLE IF NOT EXISTS words (
     created_at DATETIME(6) NOT NULL,
     id         BIGINT NOT NULL AUTO_INCREMENT,
     stage_id   BIGINT NOT NULL,
-    korean     VARCHAR(100) NOT NULL,
+    word       VARCHAR(100) NOT NULL,
     meaning    VARCHAR(200) NOT NULL,
     example    VARCHAR(500) DEFAULT NULL,
     image_url  VARCHAR(500) DEFAULT NULL,
+    order_index INT NOT NULL,
     PRIMARY KEY (id),
-    KEY fk_words_stage (stage_id),
+    KEY idx_words_stage_order (stage_id, order_index, id),
     CONSTRAINT fk_words_stage FOREIGN KEY (stage_id) REFERENCES stages (id)
 );
 

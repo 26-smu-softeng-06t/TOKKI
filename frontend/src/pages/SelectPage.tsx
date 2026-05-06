@@ -18,7 +18,7 @@ export default function SelectPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stages, setStages] = useState<Stage[]>([]);
-  const [progresses, setProgresses] = useState<Map<string, UserProgress>>(new Map());
+  const [progresses, setProgresses] = useState<Map<number, UserProgress>>(new Map());
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('easy');
   const [loading, setLoading] = useState(true);
 
@@ -34,12 +34,12 @@ export default function SelectPage() {
 
         const progressResults = await Promise.all(
           allStages.map((s) =>
-            ProgressService.getProgress(user.uid, s.stageId).catch(() => null)
+            ProgressService.getProgress(s.stageId).catch(() => null)
           )
         );
         if (cancelled) return;
 
-        const map = new Map<string, UserProgress>();
+        const map = new Map<number, UserProgress>();
         allStages.forEach((s, i) => {
           const p = progressResults[i];
           if (p) map.set(s.stageId, p);
@@ -60,9 +60,7 @@ export default function SelectPage() {
 
   const filteredStages = stages.filter((s) => s.difficulty === selectedDifficulty);
   const completedCount = stages.filter((s) => progresses.get(s.stageId)?.completed).length;
-  const reviewCount = stages.filter(
-    (s) => (progresses.get(s.stageId)?.incorrectWords.length ?? 0) > 0
-  ).length;
+  const reviewCount = 0;
 
   if (loading) {
     return (
@@ -124,7 +122,7 @@ export default function SelectPage() {
             {filteredStages.map((stage) => {
               const progress = progresses.get(stage.stageId);
               const isCompleted = progress?.completed ?? false;
-              const hasReview = (progress?.incorrectWords.length ?? 0) > 0;
+              const hasReview = false;
 
               return (
                 <button
