@@ -43,4 +43,12 @@ public class Word {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void update(String word, String meaning, String example, String imageUrl, Integer orderIndex) {
+        this.word = word;
+        this.meaning = meaning;
+        this.example = example;
+        this.imageUrl = imageUrl;
+        this.orderIndex = orderIndex;
+    }
 }

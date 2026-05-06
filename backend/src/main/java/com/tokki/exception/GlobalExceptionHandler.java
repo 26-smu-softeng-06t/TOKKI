@@ -2,10 +2,12 @@ package com.tokki.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,17 @@ public class GlobalExceptionHandler {
                 fields.put(((FieldError) err).getField(), err.getDefaultMessage()));
         return ResponseEntity.badRequest()
                 .body(Map.of("error", "VALIDATION_FAILED", "fields", fields));
+    }
+
+    @ExceptionHandler({
+            MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class,
+            IllegalArgumentException.class
+    })
+    public ResponseEntity<Map<String, Object>> handleInvalidInput(Exception e) {
+        log.warn("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", ErrorCode.INVALID_INPUT.name(), "message", ErrorCode.INVALID_INPUT.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

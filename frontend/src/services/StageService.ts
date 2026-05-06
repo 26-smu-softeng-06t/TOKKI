@@ -34,8 +34,16 @@ function normalizeStage(
 }
 
 export class StageService {
-  static async getStages(): Promise<Stage[]> {
-    return (await http.get('/stages')) as unknown as Stage[];
+  static async getStages(filters?: {
+    difficulty?: DifficultyLevel;
+    stageNumber?: number;
+  }): Promise<Stage[]> {
+    const params = filters
+      ? Object.fromEntries(
+          Object.entries(filters).filter(([, value]) => value !== undefined)
+        )
+      : undefined;
+    return (await http.get('/stages', { params })) as unknown as Stage[];
   }
 
   static async getStageById(stageId: number): Promise<Stage> {

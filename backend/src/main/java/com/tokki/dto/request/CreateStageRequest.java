@@ -1,22 +1,25 @@
 package com.tokki.dto.request;
 
+import com.tokki.domain.DifficultyLevel;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class CreateStageRequest {
 
-    @NotBlank
-    @Size(max = 100)
-    private String title;
-
-    @Size(max = 500)
-    private String description;
+    @NotNull
+    private DifficultyLevel difficulty;
 
     @NotNull
     @Min(1)
-    private Integer level;
+    @Max(10)
+    private Integer stageNumber;
+
+    @Valid
+    private List<StageWordRequest> words = List.of();
 }
