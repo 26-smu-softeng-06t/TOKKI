@@ -2,14 +2,14 @@
 -- Apply once, then run db/seed/issue-31-word-seed.sql for development seed data.
 
 ALTER TABLE stages
-    ADD COLUMN difficulty ENUM('easy', 'medium', 'hard') NOT NULL DEFAULT 'easy',
+    ADD COLUMN difficulty ENUM('low', 'medium', 'high') NOT NULL DEFAULT 'low',
     ADD COLUMN stage_number INT NULL;
 
 UPDATE stages
 SET difficulty = CASE
         WHEN LOWER(title) LIKE 'medium%' THEN 'medium'
-        WHEN LOWER(title) LIKE 'hard%' THEN 'hard'
-        ELSE 'easy'
+        WHEN LOWER(title) LIKE 'hard%' OR LOWER(title) LIKE 'high%' THEN 'high'
+        ELSE 'low'
     END,
     stage_number = COALESCE(
         CAST(REGEXP_SUBSTR(title, '[0-9]+$') AS UNSIGNED),

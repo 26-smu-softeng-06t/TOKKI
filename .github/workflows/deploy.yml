@@ -47,8 +47,28 @@ jobs:
           fi
           printf '%s\n' "$TOKKI_ENV" > .env
           test -s .env
-          grep -q '^VITE_FIREBASE_API_KEY=' .env
-          grep -q '^FIREBASE_PROJECT_ID=' .env
+
+          missing=0
+          required_keys=(
+            VITE_FIREBASE_API_KEY
+            VITE_FIREBASE_AUTH_DOMAIN
+            VITE_FIREBASE_PROJECT_ID
+            FIREBASE_PROJECT_ID
+            FIREBASE_CLIENT_EMAIL
+            FIREBASE_PRIVATE_KEY
+          )
+
+          for key in "${required_keys[@]}"; do
+            if ! grep -q "^${key}=" .env; then
+              echo "Missing required key in TOKKI_ENV: ${key}"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo "TOKKI_ENV must be the production .env content, not a single Firebase API key."
+            exit 1
+          fi
 
       - name: Build backend (Gradle)
         run: |

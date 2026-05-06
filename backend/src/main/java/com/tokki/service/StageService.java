@@ -1,7 +1,7 @@
 package com.tokki.service;
 
-import com.tokki.domain.Stage;
 import com.tokki.domain.DifficultyLevel;
+import com.tokki.domain.Stage;
 import com.tokki.domain.Word;
 import com.tokki.dto.request.BatchStageRequest;
 import com.tokki.dto.request.CreateStageRequest;
@@ -16,8 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor

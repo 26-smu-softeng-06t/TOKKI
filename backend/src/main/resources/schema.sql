@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS stages (
-    difficulty ENUM('easy', 'medium', 'hard') NOT NULL,
+    difficulty ENUM('low', 'medium', 'high') NOT NULL,
     stage_number INT NOT NULL,
     level       INT NOT NULL,
     created_at  DATETIME(6) NOT NULL,

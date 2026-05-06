@@ -5,8 +5,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -21,5 +21,6 @@ public class CreateStageRequest {
     private Integer stageNumber;
 
     @Valid
+    @NotEmpty
     private List<StageWordRequest> words = List.of();
 }

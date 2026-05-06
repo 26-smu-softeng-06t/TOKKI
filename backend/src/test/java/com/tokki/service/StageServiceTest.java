@@ -2,6 +2,9 @@ package com.tokki.service;
 
 import com.tokki.domain.DifficultyLevel;
 import com.tokki.domain.Stage;
+import com.tokki.dto.request.BatchStageRequest;
+import com.tokki.dto.request.CreateStageRequest;
+import com.tokki.dto.request.StageWordRequest;
 import com.tokki.dto.response.StageResponse;
 import com.tokki.exception.AppException;
 import com.tokki.repository.StageRepository;
@@ -45,8 +48,8 @@ class StageServiceTest {
 
     @Test
     void acceptsLowAndHighAliasesForIssueWording() {
-        when(stageRepository.findByDifficulty(DifficultyLevel.easy)).thenReturn(List.of());
-        when(stageRepository.findByDifficulty(DifficultyLevel.hard)).thenReturn(List.of());
+        when(stageRepository.findByDifficulty(DifficultyLevel.low)).thenReturn(List.of());
+        when(stageRepository.findByDifficulty(DifficultyLevel.high)).thenReturn(List.of());
 
         assertThat(stageService.getStages("low", null)).isEmpty();
         assertThat(stageService.getStages("high", null)).isEmpty();
@@ -61,8 +64,40 @@ class StageServiceTest {
 
     @Test
     void rejectsOutOfRangeStageNumber() {
-        assertThatThrownBy(() -> stageService.getStages("easy", 11))
+        assertThatThrownBy(() -> stageService.getStages("low", 11))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("잘못된 입력값");
+    }
+
+    @Test
+    void batchUpsertReturnsResponses() {
+        CreateStageRequest request = new CreateStageRequest();
+        request.setDifficulty(DifficultyLevel.low);
+        request.setStageNumber(1);
+        StageWordRequest word = new StageWordRequest();
+        word.setWord("apple");
+        word.setMeaning("사과");
+        word.setOrderIndex(1);
+        request.setWords(List.of(word));
+
+        Stage stage = Stage.builder()
+                .id(1L)
+                .difficulty(DifficultyLevel.low)
+                .stageNumber(1)
+                .level(1)
+                .title("Low Stage 1")
+                .description("Low level - Stage 1")
+                .build();
+        when(stageRepository.findByDifficultyAndStageNumber(DifficultyLevel.low, 1))
+                .thenReturn(Optional.of(stage));
+        when(stageRepository.existsById(1L)).thenReturn(true);
+        when(wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(1L)).thenReturn(List.of());
+
+        BatchStageRequest batchRequest = new BatchStageRequest();
+        batchRequest.setStages(List.of(request));
+
+        List<StageResponse> result = stageService.batchUpsertStages(batchRequest);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDifficulty()).isEqualTo("low");
     }
 }

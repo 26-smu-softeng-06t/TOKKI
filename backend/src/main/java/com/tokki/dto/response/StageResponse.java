@@ -13,11 +13,11 @@ import java.util.List;
 public class StageResponse {
     private Long stageId;
     private Long id;
-    private String difficulty;
-    private Integer stageNumber;
     private String title;
     private String description;
     private Integer level;
+    private String difficulty;
+    private Integer stageNumber;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<WordResponse> words;

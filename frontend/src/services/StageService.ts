@@ -17,7 +17,7 @@ function normalizeStage(
 
   return {
     stageId: Number(s.stageId ?? s.id ?? stageId),
-    difficulty: (s.difficulty ?? 'easy') as DifficultyLevel,
+    difficulty: (s.difficulty ?? 'low') as DifficultyLevel,
     stageNumber: Number(s.stageNumber ?? s.level ?? 0),
     createdAt: String(s.createdAt ?? ''),
     updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
@@ -43,7 +43,14 @@ export class StageService {
           Object.entries(filters).filter(([, value]) => value !== undefined)
         )
       : undefined;
-    return (await http.get('/stages', { params })) as unknown as Stage[];
+    const stages = (await http.get('/stages', { params })) as unknown as Array<Record<string, unknown>>;
+    return Promise.all(
+      stages.map(async (stageRaw) => {
+        const stageId = Number(stageRaw.stageId ?? stageRaw.id ?? 0);
+        const wordsRaw = stageId > 0 ? await http.get(`/stages/${stageId}/words`) : [];
+        return normalizeStage(stageRaw, stageId, wordsRaw);
+      }),
+    );
   }
 
   static async getStageById(stageId: number): Promise<Stage> {

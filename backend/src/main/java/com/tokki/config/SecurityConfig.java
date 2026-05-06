@@ -12,6 +12,7 @@ import com.tokki.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -64,6 +65,9 @@ public class SecurityConfig {
                                 "/ws/**",
                                 "/actuator/health"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/stages/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/stages/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/stages/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
