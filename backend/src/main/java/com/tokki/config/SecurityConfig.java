@@ -7,6 +7,8 @@ import com.tokki.repository.UserRepository;
 import com.tokki.security.FirebaseTokenFilter;
 import com.tokki.security.JwtAuthenticationFilter;
 import com.tokki.security.JwtProvider;
+import com.tokki.security.RestAccessDeniedHandler;
+import com.tokki.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,9 +41,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
-                                           FirebaseTokenFilter firebaseTokenFilter) throws Exception {
+                                           FirebaseTokenFilter firebaseTokenFilter,
+                                           RestAuthenticationEntryPoint authenticationEntryPoint,
+                                           RestAccessDeniedHandler accessDeniedHandler) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(

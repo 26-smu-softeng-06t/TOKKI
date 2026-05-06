@@ -42,7 +42,7 @@ public class AuthService {
     }
 
     @Transactional
-    public String registerAdmin(String uid, String providedSecretKey) {
+    public User registerAdmin(String uid, String providedSecretKey) {
         if (!StringUtils.hasText(adminSecretKey) || !adminSecretKey.equals(providedSecretKey)) {
             throw new AppException(ErrorCode.ADMIN_SECRET_INVALID);
         }
@@ -51,9 +51,7 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         user.updateRole(UserRole.admin);
-        userRepository.save(user);
-
-        return jwtProvider.generateToken(user.getUid(), user.getEmail(), user.getRole());
+        return userRepository.save(user);
     }
 
     @Transactional(readOnly = true)

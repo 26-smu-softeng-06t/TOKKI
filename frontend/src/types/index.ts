@@ -64,6 +64,7 @@ export interface UserProgress {
   stageId: number;
   completed: boolean;
   completedAt: ISO8601 | null;
+  incorrectWords?: IncorrectWord[];
 }
 
 export interface QuizAnswer {

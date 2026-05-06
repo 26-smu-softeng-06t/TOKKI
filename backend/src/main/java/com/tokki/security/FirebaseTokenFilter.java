@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.tokki.domain.User;
 import com.tokki.domain.UserRole;
+import com.tokki.exception.ErrorCode;
 import com.tokki.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -37,7 +38,9 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         }
 
         String token = resolveToken(request);
-        if (token != null && !FirebaseApp.getApps().isEmpty()) {
+        if (token != null && FirebaseApp.getApps().isEmpty()) {
+            request.setAttribute(AuthFailureAttributes.ERROR_CODE, ErrorCode.TOKEN_INVALID);
+        } else if (token != null) {
             try {
                 FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(token);
                 User user = userRepository.findById(decoded.getUid())
@@ -49,6 +52,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
                         authUser, null, List.of(new SimpleGrantedAuthority(authority)));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (FirebaseAuthException e) {
+                request.setAttribute(AuthFailureAttributes.ERROR_CODE, tokenErrorCode(e));
                 log.warn("Firebase token verification failed: {}", e.getMessage());
             }
         }
@@ -71,5 +75,10 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             return bearer.substring(7);
         }
         return null;
+    }
+
+    private ErrorCode tokenErrorCode(FirebaseAuthException e) {
+        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        return message.contains("expired") ? ErrorCode.TOKEN_EXPIRED : ErrorCode.TOKEN_INVALID;
     }
 }
