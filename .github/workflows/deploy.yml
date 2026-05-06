@@ -3,7 +3,7 @@ name: Deploy to DigitalOcean
 on:
   push:
     branches:
-      - main
+      - dev
 
 # 동시 배포 방지
 concurrency:
