@@ -242,6 +242,10 @@ yarn-error.log*
 .env*.local
 .firebase.env
 
+# Firebase service account key files
+*-firebase-*.json
+serviceAccountKey.json
+
 # vercel
 .vercel
 
