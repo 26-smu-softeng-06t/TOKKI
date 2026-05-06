@@ -47,12 +47,14 @@ class StageServiceTest {
     }
 
     @Test
-    void acceptsLowAndHighAliasesForIssueWording() {
-        when(stageRepository.findByDifficulty(DifficultyLevel.low)).thenReturn(List.of());
-        when(stageRepository.findByDifficulty(DifficultyLevel.high)).thenReturn(List.of());
+    void acceptsDifficultyAliasesForIssueWordingAndFrontend() {
+        when(stageRepository.findByDifficulty(DifficultyLevel.easy)).thenReturn(List.of());
+        when(stageRepository.findByDifficulty(DifficultyLevel.hard)).thenReturn(List.of());
 
         assertThat(stageService.getStages("low", null)).isEmpty();
+        assertThat(stageService.getStages("easy", null)).isEmpty();
         assertThat(stageService.getStages("high", null)).isEmpty();
+        assertThat(stageService.getStages("hard", null)).isEmpty();
     }
 
     @Test
@@ -72,7 +74,7 @@ class StageServiceTest {
     @Test
     void batchUpsertReturnsResponses() {
         CreateStageRequest request = new CreateStageRequest();
-        request.setDifficulty(DifficultyLevel.low);
+        request.setDifficulty(DifficultyLevel.easy);
         request.setStageNumber(1);
         StageWordRequest word = new StageWordRequest();
         word.setWord("apple");
@@ -82,13 +84,13 @@ class StageServiceTest {
 
         Stage stage = Stage.builder()
                 .id(1L)
-                .difficulty(DifficultyLevel.low)
+                .difficulty(DifficultyLevel.easy)
                 .stageNumber(1)
                 .level(1)
-                .title("Low Stage 1")
-                .description("Low level - Stage 1")
+                .title("Easy Stage 1")
+                .description("Easy level - Stage 1")
                 .build();
-        when(stageRepository.findByDifficultyAndStageNumber(DifficultyLevel.low, 1))
+        when(stageRepository.findByDifficultyAndStageNumber(DifficultyLevel.easy, 1))
                 .thenReturn(Optional.of(stage));
         when(stageRepository.existsById(1L)).thenReturn(true);
         when(wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(1L)).thenReturn(List.of());
@@ -98,6 +100,6 @@ class StageServiceTest {
 
         List<StageResponse> result = stageService.batchUpsertStages(batchRequest);
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getDifficulty()).isEqualTo("low");
+        assertThat(result.get(0).getDifficulty()).isEqualTo("easy");
     }
 }
