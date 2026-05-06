@@ -2,9 +2,9 @@ import http from '../lib/axios';
 import type { UserProgress, IncorrectWord } from '../types';
 
 export class ProgressService {
-  static async getProgress(userId: string, stageId: string): Promise<UserProgress | null> {
+  static async getProgress(stageId: number): Promise<UserProgress | null> {
     try {
-      return (await http.get('/progress', { params: { userId, stageId } })) as unknown as UserProgress;
+      return (await http.get('/progress', { params: { stageId } })) as unknown as UserProgress;
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('404') || msg === 'NOT_FOUND') return null;
@@ -16,15 +16,23 @@ export class ProgressService {
     await http.post('/progress', progress);
   }
 
-  static async markStageCompleted(stageId: string): Promise<void> {
+  static async markStageCompleted(stageId: number): Promise<void> {
     await http.post('/progress', { stageId, completed: true });
   }
 
-  static async getIncorrectWords(userId: string): Promise<IncorrectWord[]> {
-    return (await http.get('/progress/incorrect', { params: { userId } })) as unknown as IncorrectWord[];
+  static async getIncorrectWords(): Promise<IncorrectWord[]> {
+    try {
+      return (await http.get('/progress/incorrect-words')) as unknown as IncorrectWord[];
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        const { MOCK_INCORRECT_WORDS } = await import('../api/mockData');
+        return MOCK_INCORRECT_WORDS;
+      }
+      throw err;
+    }
   }
 
-  static async resolveIncorrectWord(progressId: string, wordId: string): Promise<void> {
-    await http.patch(`/progress/${progressId}/incorrect/${wordId}`);
+  static async resolveIncorrectWord(wordId: number): Promise<void> {
+    await http.delete(`/progress/incorrect/${wordId}`);
   }
 }

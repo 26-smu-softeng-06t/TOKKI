@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS words (
     image_url  VARCHAR(500) DEFAULT NULL,
     order_index INT NOT NULL,
     PRIMARY KEY (id),
-    KEY fk_words_stage (stage_id),
+    KEY idx_words_stage_order (stage_id, order_index, id),
     CONSTRAINT fk_words_stage FOREIGN KEY (stage_id) REFERENCES stages (id)
 );
 

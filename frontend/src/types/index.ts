@@ -19,8 +19,8 @@ export interface User {
 }
 
 export interface Word {
-  wordId: string;
-  stageId: string;
+  wordId: number;
+  stageId: number;
   word: string;
   meaning: string;
   example: string | null;
@@ -29,7 +29,7 @@ export interface Word {
 }
 
 export interface Stage {
-  stageId: string;
+  stageId: number;
   difficulty: DifficultyLevel;
   stageNumber: number;
   words: Word[];
@@ -51,74 +51,70 @@ export interface WordInput {
 }
 
 export interface IncorrectWord {
-  incorrectWordId: string;
-  progressId: string;
-  wordId: string;
-  isResolved: boolean;
+  incorrectWordId: number;
+  wordId: number;
+  uid: string;
+  count: number;
+  lastIncorrectAt: ISO8601;
 }
 
 export interface UserProgress {
-  progressId: string;
-  userId: string;
-  stageId: string;
+  id: number;
+  uid: string;
+  stageId: number;
   completed: boolean;
-  lastScore: number;
-  incorrectWords: IncorrectWord[];
-  updatedAt: ISO8601;
+  completedAt: ISO8601 | null;
 }
 
 export interface QuizAnswer {
-  answerId: string;
-  sessionId: string;
-  wordId: string;
+  id: number;
+  sessionId: number;
+  wordId: number;
   userAnswer: string;
-  isCorrect: boolean;
+  correct: boolean;
 }
 
 export interface QuizSession {
-  sessionId: string;
-  userId: string;
-  stageId: string;
-  mode: QuizMode;
-  currentIndex: number;
-  answers: QuizAnswer[];
-  savedAt: ISO8601;
+  id: number;
+  uid: string;
+  stageId: number;
+  score: number;
+  totalQuestions: number;
+  startedAt: ISO8601;
+  completedAt: ISO8601 | null;
 }
 
 export interface WordRelation {
-  relationId: string;
-  wordId: string;
-  relationType: RelationType;
-  relatedWord: string;
-  relatedMeaning: string;
+  id: number;
+  wordId: number;
+  relatedWordId: number;
+  relationType: string;
 }
 
 export interface Ranking {
-  rankingId: string;
-  wordId: string;
-  word: string;
-  meaning: string;
-  missCount: number;
-  rank: number;
-  updatedAt: ISO8601;
+  id: number;
+  uid: string;
+  score: number;
+  rankPosition: number;
+  period: string;
 }
 
 export interface PvpRoom {
-  roomId: string;
-  hostId: string;
-  guestId: string | null;
-  inviteCode: string;
-  stageId: string;
-  status: PvpStatus;
+  id: number;
+  hostUid: string;
+  guestUid: string | null;
+  stageId: number;
+  status: string;
   createdAt: ISO8601;
 }
 
 export interface PvpResult {
-  resultId: string;
-  roomId: string;
-  userId: string;
+  id: number;
+  roomId: number;
+  uid: string;
   score: number;
-  completionTime: number;
+  result: string;
+  createdAt: ISO8601;
 }
 
 export interface ProgressMessage {
