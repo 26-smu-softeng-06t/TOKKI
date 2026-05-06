@@ -1,7 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.dto.request.BatchStageRequest;
 import com.tokki.dto.request.CreateStageRequest;
-import com.tokki.dto.request.BatchUploadRequest;
 import com.tokki.dto.response.StageResponse;
 import com.tokki.dto.response.WordResponse;
 import com.tokki.service.StageService;
@@ -20,8 +20,10 @@ public class StageController {
     private final StageService stageService;
 
     @GetMapping
-    public ResponseEntity<List<StageResponse>> getAllStages() {
-        return ResponseEntity.ok(stageService.getAllStages());
+    public ResponseEntity<List<StageResponse>> getStages(
+            @RequestParam(required = false) String difficulty,
+            @RequestParam(required = false) Integer stageNumber) {
+        return ResponseEntity.ok(stageService.getStages(difficulty, stageNumber));
     }
 
     @GetMapping("/{stageId}")
@@ -53,7 +55,7 @@ public class StageController {
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<List<StageResponse>> batchUpload(@Valid @RequestBody BatchUploadRequest request) {
-        return ResponseEntity.ok(stageService.batchUpload(request));
+    public ResponseEntity<List<StageResponse>> batchUploadStages(@Valid @RequestBody BatchStageRequest request) {
+        return ResponseEntity.ok(stageService.batchUpsertStages(request));
     }
 }

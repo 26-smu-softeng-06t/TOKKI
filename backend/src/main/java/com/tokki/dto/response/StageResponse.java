@@ -1,40 +1,54 @@
 package com.tokki.dto.response;
 
 import com.tokki.domain.Stage;
+import com.tokki.dto.response.WordResponse;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
 public class StageResponse {
-    private Long id;
     private Long stageId;
+    private Long id;
     private String title;
     private String description;
     private Integer level;
     private String difficulty;
     private Integer stageNumber;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private List<WordResponse> words;
 
     public static StageResponse from(Stage stage) {
         return StageResponse.builder()
-                .id(stage.getId())
                 .stageId(stage.getId())
+                .id(stage.getId())
+                .difficulty(stage.getDifficulty().name())
+                .stageNumber(stage.getStageNumber())
                 .title(stage.getTitle())
                 .description(stage.getDescription())
                 .level(stage.getLevel())
-                .difficulty(difficulty(stage.getTitle()))
-                .stageNumber(stage.getLevel())
                 .createdAt(stage.getCreatedAt())
+                .updatedAt(stage.getCreatedAt())
+                .words(List.of())
                 .build();
     }
 
-    private static String difficulty(String title) {
-        if ("easy".equals(title) || "medium".equals(title) || "hard".equals(title)) {
-            return title;
-        }
-        return null;
+    public static StageResponse from(Stage stage, List<WordResponse> words) {
+        return StageResponse.builder()
+                .stageId(stage.getId())
+                .id(stage.getId())
+                .difficulty(stage.getDifficulty().name())
+                .stageNumber(stage.getStageNumber())
+                .title(stage.getTitle())
+                .description(stage.getDescription())
+                .level(stage.getLevel())
+                .createdAt(stage.getCreatedAt())
+                .updatedAt(stage.getCreatedAt())
+                .words(words)
+                .build();
     }
 }

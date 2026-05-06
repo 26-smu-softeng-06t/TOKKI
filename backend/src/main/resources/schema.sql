@@ -8,12 +8,17 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS stages (
+    difficulty ENUM('low', 'medium', 'high') NOT NULL,
+    stage_number INT NOT NULL,
     level       INT NOT NULL,
     created_at  DATETIME(6) NOT NULL,
     id          BIGINT NOT NULL AUTO_INCREMENT,
     title       VARCHAR(100) NOT NULL,
     description VARCHAR(500) DEFAULT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_stages_difficulty_stage_number (difficulty, stage_number),
+    CONSTRAINT chk_stages_stage_number CHECK (stage_number BETWEEN 1 AND 10),
+    CONSTRAINT chk_stages_level CHECK (level BETWEEN 1 AND 10)
 );
 
 CREATE TABLE IF NOT EXISTS words (
