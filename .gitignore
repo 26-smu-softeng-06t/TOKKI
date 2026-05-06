@@ -698,3 +698,6 @@ serviceAccount*.json
 
 # Local working notes
 notes/
+
+# Local editor settings
+.vscode/
