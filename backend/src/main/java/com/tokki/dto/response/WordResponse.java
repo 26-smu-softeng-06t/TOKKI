@@ -7,21 +7,23 @@ import lombok.Getter;
 @Getter
 @Builder
 public class WordResponse {
-    private Long id;
+    private Long wordId;
     private Long stageId;
-    private String korean;
+    private String word;
     private String meaning;
     private String example;
     private String imageUrl;
+    private Integer orderIndex;
 
     public static WordResponse from(Word word) {
         return WordResponse.builder()
-                .id(word.getId())
+                .wordId(word.getId())
                 .stageId(word.getStage().getId())
-                .korean(word.getKorean())
+                .word(word.getWord())
                 .meaning(word.getMeaning())
                 .example(word.getExample())
                 .imageUrl(word.getImageUrl())
+                .orderIndex(word.getOrderIndex())
                 .build();
     }
 }

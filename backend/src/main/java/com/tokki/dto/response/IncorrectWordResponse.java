@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 public class IncorrectWordResponse {
     private Long wordId;
-    private String korean;
+    private String word;
     private String meaning;
     private Integer count;
     private LocalDateTime lastIncorrectAt;
@@ -18,7 +18,7 @@ public class IncorrectWordResponse {
     public static IncorrectWordResponse from(IncorrectWord iw) {
         return IncorrectWordResponse.builder()
                 .wordId(iw.getWord().getId())
-                .korean(iw.getWord().getKorean())
+                .word(iw.getWord().getWord())
                 .meaning(iw.getWord().getMeaning())
                 .count(iw.getCount())
                 .lastIncorrectAt(iw.getLastIncorrectAt())

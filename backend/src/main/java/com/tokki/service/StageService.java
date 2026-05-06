@@ -40,7 +40,7 @@ public class StageService {
         if (!stageRepository.existsById(stageId)) {
             throw new AppException(ErrorCode.STAGE_NOT_FOUND);
         }
-        return wordRepository.findByStageId(stageId).stream()
+        return wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(stageId).stream()
                 .map(WordResponse::from)
                 .toList();
     }

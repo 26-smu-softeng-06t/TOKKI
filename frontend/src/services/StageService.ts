@@ -4,13 +4,8 @@ import type { Stage, DifficultyLevel, StageInput } from '../types';
 
 /**
  * Normalizes raw API responses into the frontend Stage type.
- * Handles two backend formats:
- *  - New schema  : { stageId, difficulty, stageNumber, createdAt, updatedAt }
- *                  words: { wordId, stageId, word, meaning, example, orderIndex }
- *  - Old backend : { id, title, description, level, createdAt }
- *                  words: { id, stageId, korean, meaning, example, imageUrl }
- *    (old backend: `korean` = Korean text ≡ frontend `meaning`;
- *                  `meaning` = English text ≡ frontend `word`)
+ * Backend words use the same contract as the frontend:
+ * { wordId, stageId, word, meaning, example, imageUrl, orderIndex }.
  */
 function normalizeStage(
   stageRaw: unknown,
@@ -27,12 +22,12 @@ function normalizeStage(
     createdAt: String(s.createdAt ?? ''),
     updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
     words: ws.map((w, i) => ({
-      wordId: String(w.wordId ?? w.id ?? ''),
+      wordId: String(w.wordId ?? ''),
       stageId: String(w.stageId ?? stageId),
-      // New schema has `word` (English); old backend has `meaning` (English) + `korean` (Korean)
-      word: String(w.word ?? ('korean' in w ? w.meaning : '') ?? ''),
-      meaning: String(('korean' in w ? w.korean : w.meaning) ?? ''),
+      word: String(w.word ?? ''),
+      meaning: String(w.meaning ?? ''),
       example: (w.example as string | null) ?? null,
+      imageUrl: (w.imageUrl as string | null) ?? null,
       orderIndex: Number(w.orderIndex ?? w.order_index ?? i + 1),
     })),
   };

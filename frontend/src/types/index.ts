@@ -24,6 +24,7 @@ export interface Word {
   word: string;
   meaning: string;
   example: string | null;
+  imageUrl: string | null;
   orderIndex: number;
 }
 
