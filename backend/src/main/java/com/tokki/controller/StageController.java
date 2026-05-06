@@ -1,6 +1,7 @@
 package com.tokki.controller;
 
 import com.tokki.dto.request.CreateStageRequest;
+import com.tokki.dto.request.BatchUploadRequest;
 import com.tokki.dto.response.StageResponse;
 import com.tokki.dto.response.WordResponse;
 import com.tokki.service.StageService;
@@ -36,5 +37,23 @@ public class StageController {
     @PostMapping
     public ResponseEntity<StageResponse> createStage(@Valid @RequestBody CreateStageRequest request) {
         return ResponseEntity.ok(stageService.createStage(request));
+    }
+
+    @PutMapping("/{stageId}")
+    public ResponseEntity<StageResponse> updateStage(
+            @PathVariable Long stageId,
+            @Valid @RequestBody CreateStageRequest request) {
+        return ResponseEntity.ok(stageService.updateStage(stageId, request));
+    }
+
+    @DeleteMapping("/{stageId}")
+    public ResponseEntity<Void> deleteStage(@PathVariable Long stageId) {
+        stageService.deleteStage(stageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<List<StageResponse>> batchUpload(@Valid @RequestBody BatchUploadRequest request) {
+        return ResponseEntity.ok(stageService.batchUpload(request));
     }
 }

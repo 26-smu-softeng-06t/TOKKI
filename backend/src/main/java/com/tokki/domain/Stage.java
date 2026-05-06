@@ -33,4 +33,10 @@ public class Stage {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void update(String title, String description, Integer level) {
+        this.title = title;
+        this.description = description;
+        this.level = level;
+    }
 }
