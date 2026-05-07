@@ -147,33 +147,64 @@ export default function QuizPage() {
     }
   };
 
-  const saveProgress = (finalResults: QuestionResult[]) => {
+  const saveProgress = async (finalResults: QuestionResult[]) => {
     if (!user || !stageId) return;
     const sId = Number(stageId);
-    const score = finalResults.filter((r) => r.isCorrect).length;
 
-    // Save quiz session
-    QuizSessionService.saveQuizResult({
-      stageId: sId,
-      score,
-      totalQuestions: finalResults.length,
-      answers: finalResults.map((r) => ({
-        wordId: r.word.wordId,
-        userAnswer: r.userAnswer,
-        correct: r.isCorrect,
-      })),
-    }).catch(() => {});
+    // [1] Update local state immediately with newly failed words (for Mock environments)
+    const newlyFailed = finalResults.filter((r) => !r.isCorrect);
+    if (newlyFailed.length > 0) {
+      setIncorrectWords((prev) => {
+        const next = [...prev];
+        newlyFailed.forEach((nf) => {
+          if (!next.some((iw) => iw.wordId === nf.word.wordId)) {
+            next.push({
+              incorrectWordId: Date.now() + Math.random(), // Temporary ID for mock
+              wordId: nf.word.wordId,
+              uid: user.uid,
+              count: 1,
+              lastIncorrectAt: new Date().toISOString(),
+            });
+          }
+        });
+        return next;
+      });
+    }
 
-    // Mark stage as completed
-    ProgressService.markStageCompleted(sId).catch(() => {});
-
-    // Identify words to resolve (was incorrect, now correct)
+    // [2] Identify words to resolve (was incorrect, now correct) - use current state before sync
     const correctIds = new Set(finalResults.filter((r) => r.isCorrect).map((r) => r.word.wordId));
     const toResolve =
       stage?.words.filter(
         (w) => correctIds.has(w.wordId) && incorrectWords.some((iw) => iw.wordId === w.wordId),
       ) ?? [];
 
+    // [3] Save and Sync (Async)
+    try {
+      await QuizSessionService.saveQuizResult({
+        stageId: sId,
+        score: finalResults.filter((r) => r.isCorrect).length,
+        totalQuestions: finalResults.length,
+        answers: finalResults.map((r) => ({
+          wordId: r.word.wordId,
+          userAnswer: r.userAnswer,
+          correct: r.isCorrect,
+        })),
+      });
+
+      await ProgressService.markStageCompleted(sId);
+
+      // Re-fetch incorrect words to reflect new failures immediately from DB if possible
+      const allIw = await ProgressService.getIncorrectWords();
+      if (stage) {
+        const stageIw = allIw.filter((iw) => stage.words.some((w) => w.wordId === iw.wordId));
+        setIncorrectWords(stageIw);
+      }
+    } catch (err) {
+      console.error('Failed to sync progress:', err);
+      // Even if sync fails, the local state was updated above, so Retry will work.
+    }
+
+    // [4] Show Resolve Dialog if there are words to resolve
     if (toResolve.length > 0) {
       setWordsToResolve(toResolve);
       setShowResolveDialog(true);
@@ -572,47 +603,50 @@ export default function QuizPage() {
         <div className="flex-1 overflow-y-auto p-8 pt-12">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">상세 결과</h3>
           <div className="flex flex-col gap-3">
-            {results.map((r, i) => (
-              <div
-                key={i}
-                className={`p-4 rounded-2xl border flex items-center gap-4 bg-white ${
-                  r.isCorrect ? 'border-green-100' : 'border-slate-100'
-                }`}
-              >
+            {results.map((r, i) => {
+              const prompt = mode === 'KtoE' ? r.word.meaning : r.word.word;
+              return (
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    r.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                  key={i}
+                  className={`p-4 rounded-2xl border flex items-center gap-4 bg-white ${
+                    r.isCorrect ? 'border-green-100' : 'border-slate-100'
                   }`}
                 >
-                  {r.isCorrect ? (
-                    <CheckCircle className="w-5 h-5" />
-                  ) : (
-                    <XCircle className="w-5 h-5" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <p className="font-bold text-slate-900 truncate">{r.word.word}</p>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                      Q.{i + 1}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-x-3 gap-y-1">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      r.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                    }`}
+                  >
                     {r.isCorrect ? (
-                      <p className="text-sm text-slate-500 font-medium">{r.word.meaning}</p>
+                      <CheckCircle className="w-5 h-5" />
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs line-through text-slate-300 decoration-red-300">
-                          {r.userAnswer || '(공백)'}
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-red-300" />
-                        <span className="text-xs font-bold text-red-600">{r.correctAnswer}</span>
-                      </div>
+                      <XCircle className="w-5 h-5" />
                     )}
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between items-start mb-0.5">
+                      <p className="font-bold text-slate-900 truncate">{prompt}</p>
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                        Q.{i + 1}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-x-3 gap-y-1">
+                      {r.isCorrect ? (
+                        <p className="text-sm text-slate-500 font-medium">{r.correctAnswer}</p>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs line-through text-slate-300 decoration-red-500 decoration-2">
+                            {r.userAnswer || '(공백)'}
+                          </span>
+                          <ArrowRight className="w-3 h-3 text-slate-300" />
+                          <span className="text-xs font-bold text-red-600">{r.correctAnswer}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
