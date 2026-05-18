@@ -4,6 +4,7 @@ import { auth, firebaseConfigured } from './firebase';
 const ACCESS_TOKEN_KEY = 'tokki.accessToken';
 const rawApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const shouldUseDevProxy = import.meta.env.DEV;
+const shouldUseDevAuth = import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_USER === 'true';
 const normalizedApiBaseUrl = rawApiBaseUrl
   ? rawApiBaseUrl.endsWith('/api') ? rawApiBaseUrl : `${rawApiBaseUrl}/api`
   : '/api';
@@ -34,6 +35,12 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(async (config) => {
+  if (shouldUseDevAuth) {
+    config.headers['X-TOKKI-DEV-USER'] = 'true';
+    config.headers['X-TOKKI-DEV-ROLE'] = 'admin';
+    return config;
+  }
+
   const token = firebaseConfigured && auth.currentUser
     ? await auth.currentUser.getIdToken()
     : getStoredAccessToken();

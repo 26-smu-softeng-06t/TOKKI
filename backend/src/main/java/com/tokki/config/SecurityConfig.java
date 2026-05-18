@@ -4,6 +4,7 @@ import com.tokki.auth.handler.OAuth2FailureHandler;
 import com.tokki.auth.handler.OAuth2SuccessHandler;
 import com.tokki.auth.service.CustomOAuth2UserService;
 import com.tokki.repository.UserRepository;
+import com.tokki.security.DevAuthenticationFilter;
 import com.tokki.security.FirebaseTokenFilter;
 import com.tokki.security.JwtAuthenticationFilter;
 import com.tokki.security.JwtProvider;
@@ -40,7 +41,13 @@ public class SecurityConfig {
     }
 
     @Bean
+    public DevAuthenticationFilter devAuthenticationFilter() {
+        return new DevAuthenticationFilter();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
+                                           DevAuthenticationFilter devAuthenticationFilter,
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
                                            FirebaseTokenFilter firebaseTokenFilter,
                                            RestAuthenticationEntryPoint authenticationEntryPoint,
@@ -65,6 +72,7 @@ public class SecurityConfig {
                                 "/ws/**",
                                 "/actuator/health"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stages/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/stages/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/stages/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/stages/**").hasRole("ADMIN")
@@ -78,6 +86,7 @@ public class SecurityConfig {
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler(oauth2FailureHandler)
                 )
+                .addFilterBefore(devAuthenticationFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(firebaseTokenFilter, JwtAuthenticationFilter.class)
                 .build();
