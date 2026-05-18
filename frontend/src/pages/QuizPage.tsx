@@ -4,6 +4,11 @@ import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home, BookOpen,
 import { useAuth } from '../hooks/useAuth';
 import { StageService } from '../services/StageService';
 import { ProgressService } from '../services/ProgressService';
+import {
+  OfflineProgressQueue,
+  subscribeProgressSyncStatus,
+  type ProgressSyncStatus,
+} from '../services/OfflineProgressQueue';
 import { QuizSessionService } from '../services/QuizSessionService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import type { Stage, Word, QuizMode, IncorrectWord } from '../types';
@@ -52,6 +57,9 @@ export default function QuizPage() {
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<QuestionResult[]>([]);
+  const [syncStatus, setSyncStatus] = useState<ProgressSyncStatus>(
+    OfflineProgressQueue.hasPending() ? 'queued' : 'idle',
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
@@ -91,6 +99,12 @@ export default function QuizPage() {
   useEffect(() => {
     if (phase === 'result') window.scrollTo({ top: 0, behavior: 'instant' });
   }, [phase]);
+
+  useEffect(() => subscribeProgressSyncStatus(setSyncStatus), []);
+
+  useEffect(() => {
+    void ProgressService.syncQueuedProgress();
+  }, []);
 
   useEffect(() => {
     if (phase === 'quiz' && !submitted) {
@@ -201,7 +215,12 @@ export default function QuizPage() {
       }
     } catch (err) {
       console.error('Failed to sync progress:', err);
-      // Even if sync fails, the local state was updated above, so Retry will work.
+      try {
+        await ProgressService.markStageCompleted(sId);
+      } catch {
+        // ProgressService has already queued the completion when a retry is possible.
+      }
+      setSyncStatus(OfflineProgressQueue.hasPending() ? 'queued' : 'failed');
     }
 
     // [4] Show Resolve Dialog if there are words to resolve
@@ -581,6 +600,22 @@ export default function QuizPage() {
       ? 'text-amber-600'
       : 'text-red-500';
 
+  const syncLabel: Record<ProgressSyncStatus, string> = {
+    idle: '저장 대기',
+    queued: '오프라인 저장됨',
+    syncing: '동기화 중',
+    synced: '저장 완료',
+    failed: '동기화 실패',
+  };
+
+  const syncClass: Record<ProgressSyncStatus, string> = {
+    idle: 'bg-slate-100 text-slate-500',
+    queued: 'bg-amber-100 text-amber-700',
+    syncing: 'bg-indigo-100 text-indigo-700',
+    synced: 'bg-green-100 text-green-700',
+    failed: 'bg-red-100 text-red-600',
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
@@ -592,6 +627,11 @@ export default function QuizPage() {
             </div>
           </div>
           <h2 className={`text-lg font-black mb-0.5 ${scoreLabelColor}`}>{scoreLabel}</h2>
+          <div className="mb-2 flex justify-center">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${syncClass[syncStatus]}`}>
+              {syncLabel[syncStatus]}
+            </span>
+          </div>
           <div className="flex justify-center items-baseline gap-1.5">
             <span className="text-3xl font-black text-slate-900">{score}</span>
             <span className="text-slate-300 text-lg font-black">/</span>
