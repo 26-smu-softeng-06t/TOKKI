@@ -136,9 +136,6 @@ public class ExcelStageUploadService {
             return;
         }
         draft.words.add(toWordRequest(word, meaning, example, imageUrl, orderIndex));
-        if (draft.words.size() > 10) {
-            errors.add(new ExcelUploadRowError(rowNumber, "stage", "하나의 스테이지에는 최대 10개 단어만 업로드할 수 있습니다."));
-        }
     }
 
     private StageWordRequest toWordRequest(String word, String meaning, String example, String imageUrl, Integer orderIndex) {
