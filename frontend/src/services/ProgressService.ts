@@ -4,7 +4,8 @@ import type { UserProgress, IncorrectWord } from '../types';
 export class ProgressService {
   static async getProgress(stageId: number): Promise<UserProgress | null> {
     try {
-      return (await http.get('/progress', { params: { stageId } })) as unknown as UserProgress;
+      const progresses = (await http.get('/progress')) as unknown as UserProgress[];
+      return progresses.find((progress) => progress.stageId === stageId) ?? null;
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('404') || msg === 'NOT_FOUND') return null;

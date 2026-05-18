@@ -3,16 +3,16 @@
 
 INSERT INTO stages (difficulty, stage_number, level, created_at, title, description)
 VALUES
-    ('low', 1, 1, NOW(6), 'Low Stage 1', 'Low level - Stage 1'),
-    ('low', 2, 2, NOW(6), 'Low Stage 2', 'Low level - Stage 2'),
-    ('low', 3, 3, NOW(6), 'Low Stage 3', 'Low level - Stage 3'),
-    ('low', 4, 4, NOW(6), 'Low Stage 4', 'Low level - Stage 4'),
-    ('low', 5, 5, NOW(6), 'Low Stage 5', 'Low level - Stage 5'),
-    ('low', 6, 6, NOW(6), 'Low Stage 6', 'Low level - Stage 6'),
-    ('low', 7, 7, NOW(6), 'Low Stage 7', 'Low level - Stage 7'),
-    ('low', 8, 8, NOW(6), 'Low Stage 8', 'Low level - Stage 8'),
-    ('low', 9, 9, NOW(6), 'Low Stage 9', 'Low level - Stage 9'),
-    ('low', 10, 10, NOW(6), 'Low Stage 10', 'Low level - Stage 10'),
+    ('easy', 1, 1, NOW(6), 'Easy Stage 1', 'Easy level - Stage 1'),
+    ('easy', 2, 2, NOW(6), 'Easy Stage 2', 'Easy level - Stage 2'),
+    ('easy', 3, 3, NOW(6), 'Easy Stage 3', 'Easy level - Stage 3'),
+    ('easy', 4, 4, NOW(6), 'Easy Stage 4', 'Easy level - Stage 4'),
+    ('easy', 5, 5, NOW(6), 'Easy Stage 5', 'Easy level - Stage 5'),
+    ('easy', 6, 6, NOW(6), 'Easy Stage 6', 'Easy level - Stage 6'),
+    ('easy', 7, 7, NOW(6), 'Easy Stage 7', 'Easy level - Stage 7'),
+    ('easy', 8, 8, NOW(6), 'Easy Stage 8', 'Easy level - Stage 8'),
+    ('easy', 9, 9, NOW(6), 'Easy Stage 9', 'Easy level - Stage 9'),
+    ('easy', 10, 10, NOW(6), 'Easy Stage 10', 'Easy level - Stage 10'),
     ('medium', 1, 1, NOW(6), 'Medium Stage 1', 'Medium level - Stage 1'),
     ('medium', 2, 2, NOW(6), 'Medium Stage 2', 'Medium level - Stage 2'),
     ('medium', 3, 3, NOW(6), 'Medium Stage 3', 'Medium level - Stage 3'),
@@ -23,25 +23,25 @@ VALUES
     ('medium', 8, 8, NOW(6), 'Medium Stage 8', 'Medium level - Stage 8'),
     ('medium', 9, 9, NOW(6), 'Medium Stage 9', 'Medium level - Stage 9'),
     ('medium', 10, 10, NOW(6), 'Medium Stage 10', 'Medium level - Stage 10'),
-    ('high', 1, 1, NOW(6), 'High Stage 1', 'High level - Stage 1'),
-    ('high', 2, 2, NOW(6), 'High Stage 2', 'High level - Stage 2'),
-    ('high', 3, 3, NOW(6), 'High Stage 3', 'High level - Stage 3'),
-    ('high', 4, 4, NOW(6), 'High Stage 4', 'High level - Stage 4'),
-    ('high', 5, 5, NOW(6), 'High Stage 5', 'High level - Stage 5'),
-    ('high', 6, 6, NOW(6), 'High Stage 6', 'High level - Stage 6'),
-    ('high', 7, 7, NOW(6), 'High Stage 7', 'High level - Stage 7'),
-    ('high', 8, 8, NOW(6), 'High Stage 8', 'High level - Stage 8'),
-    ('high', 9, 9, NOW(6), 'High Stage 9', 'High level - Stage 9'),
-    ('high', 10, 10, NOW(6), 'High Stage 10', 'High level - Stage 10')
+    ('hard', 1, 1, NOW(6), 'Hard Stage 1', 'Hard level - Stage 1'),
+    ('hard', 2, 2, NOW(6), 'Hard Stage 2', 'Hard level - Stage 2'),
+    ('hard', 3, 3, NOW(6), 'Hard Stage 3', 'Hard level - Stage 3'),
+    ('hard', 4, 4, NOW(6), 'Hard Stage 4', 'Hard level - Stage 4'),
+    ('hard', 5, 5, NOW(6), 'Hard Stage 5', 'Hard level - Stage 5'),
+    ('hard', 6, 6, NOW(6), 'Hard Stage 6', 'Hard level - Stage 6'),
+    ('hard', 7, 7, NOW(6), 'Hard Stage 7', 'Hard level - Stage 7'),
+    ('hard', 8, 8, NOW(6), 'Hard Stage 8', 'Hard level - Stage 8'),
+    ('hard', 9, 9, NOW(6), 'Hard Stage 9', 'Hard level - Stage 9'),
+    ('hard', 10, 10, NOW(6), 'Hard Stage 10', 'Hard level - Stage 10')
 ON DUPLICATE KEY UPDATE
     level = VALUES(level),
     title = VALUES(title),
     description = VALUES(description);
 
--- Low Stage_1
+-- Easy Stage_1
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 1;
+WHERE s.difficulty = 'easy' AND s.stage_number = 1;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -55,12 +55,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Hand' AS word, '손' AS meaning, 'Wash your hands.' AS example, 8 AS ord UNION ALL
     SELECT 'Ink' AS word, '잉크' AS meaning, 'Blue ink.' AS example, 9 AS ord UNION ALL
     SELECT 'Juice' AS word, '주스' AS meaning, 'Orange juice.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 1;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 1;
 
--- Low Stage_2
+-- Easy Stage_2
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 2;
+WHERE s.difficulty = 'easy' AND s.stage_number = 2;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -74,12 +74,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Study' AS word, '공부하다' AS meaning, 'Study hard.' AS example, 8 AS ord UNION ALL
     SELECT 'Exam' AS word, '시험' AS meaning, 'Final exam.' AS example, 9 AS ord UNION ALL
     SELECT 'Grade' AS word, '성적' AS meaning, 'Good grades.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 2;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 2;
 
--- Low Stage_3
+-- Easy Stage_3
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 3;
+WHERE s.difficulty = 'easy' AND s.stage_number = 3;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -93,12 +93,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Kitchen' AS word, '주방' AS meaning, 'Cook in the kitchen.' AS example, 8 AS ord UNION ALL
     SELECT 'Floor' AS word, '바닥' AS meaning, 'Wooden floor.' AS example, 9 AS ord UNION ALL
     SELECT 'Wall' AS word, '벽' AS meaning, 'White wall.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 3;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 3;
 
--- Low Stage_4
+-- Easy Stage_4
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 4;
+WHERE s.difficulty = 'easy' AND s.stage_number = 4;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -112,12 +112,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Pizza' AS word, '피자' AS meaning, 'Hot pizza.' AS example, 8 AS ord UNION ALL
     SELECT 'Soup' AS word, '수프' AS meaning, 'Tomato soup.' AS example, 9 AS ord UNION ALL
     SELECT 'Sugar' AS word, '설탕' AS meaning, 'Add sugar.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 4;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 4;
 
--- Low Stage_5
+-- Easy Stage_5
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 5;
+WHERE s.difficulty = 'easy' AND s.stage_number = 5;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -131,12 +131,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Foot' AS word, '발' AS meaning, 'Left foot.' AS example, 8 AS ord UNION ALL
     SELECT 'Hair' AS word, '머리카락' AS meaning, 'Black hair.' AS example, 9 AS ord UNION ALL
     SELECT 'Tooth' AS word, '치아' AS meaning, 'Brush your teeth.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 5;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 5;
 
--- Low Stage_6
+-- Easy Stage_6
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 6;
+WHERE s.difficulty = 'easy' AND s.stage_number = 6;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -150,12 +150,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Cold' AS word, '추운' AS meaning, 'It is cold.' AS example, 8 AS ord UNION ALL
     SELECT 'Hot' AS word, '뜨거운' AS meaning, 'Hot summer.' AS example, 9 AS ord UNION ALL
     SELECT 'Dark' AS word, '어두운' AS meaning, 'It is dark.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 6;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 6;
 
--- Low Stage_7
+-- Easy Stage_7
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 7;
+WHERE s.difficulty = 'easy' AND s.stage_number = 7;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -169,12 +169,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Mouse' AS word, '쥐' AS meaning, 'Small mouse.' AS example, 8 AS ord UNION ALL
     SELECT 'Rabbit' AS word, '토끼' AS meaning, 'White rabbit.' AS example, 9 AS ord UNION ALL
     SELECT 'Horse' AS word, '말' AS meaning, 'Ride a horse.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 7;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 7;
 
--- Low Stage_8
+-- Easy Stage_8
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 8;
+WHERE s.difficulty = 'easy' AND s.stage_number = 8;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -188,12 +188,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Taxi' AS word, '택시' AS meaning, 'Call a taxi.' AS example, 8 AS ord UNION ALL
     SELECT 'Subway' AS word, '지하철' AS meaning, 'Use the subway.' AS example, 9 AS ord UNION ALL
     SELECT 'Boat' AS word, '보트' AS meaning, 'Small boat.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 8;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 8;
 
--- Low Stage_9
+-- Easy Stage_9
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 9;
+WHERE s.difficulty = 'easy' AND s.stage_number = 9;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -207,12 +207,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Square' AS word, '사각형' AS meaning, 'Square box.' AS example, 8 AS ord UNION ALL
     SELECT 'Color' AS word, '색깔' AS meaning, 'Favorite color.' AS example, 9 AS ord UNION ALL
     SELECT 'Bright' AS word, '밝은' AS meaning, 'Bright light.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 9;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 9;
 
--- Low Stage_10
+-- Easy Stage_10
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'low' AND s.stage_number = 10;
+WHERE s.difficulty = 'easy' AND s.stage_number = 10;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -226,7 +226,7 @@ FROM stages s CROSS JOIN (
     SELECT 'Drink' AS word, '마시다' AS meaning, 'Drink water.' AS example, 8 AS ord UNION ALL
     SELECT 'Run' AS word, '달리다' AS meaning, 'Run fast.' AS example, 9 AS ord UNION ALL
     SELECT 'Walk' AS word, '걷다' AS meaning, 'Walk home.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'low' AND s.stage_number = 10;
+) t WHERE s.difficulty = 'easy' AND s.stage_number = 10;
 
 -- medium stage_1
 DELETE w FROM words w
@@ -418,10 +418,10 @@ FROM stages s CROSS JOIN (
     SELECT 'University' AS word, '대학교' AS meaning, 'Attend university.' AS example, 10 AS ord
 ) t WHERE s.difficulty = 'medium' AND s.stage_number = 10;
 
--- High Stage_1
+-- Hard Stage_1
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 1;
+WHERE s.difficulty = 'hard' AND s.stage_number = 1;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -435,12 +435,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Hypocrisy' AS word, '위선' AS meaning, 'End hypocrisy.' AS example, 8 AS ord UNION ALL
     SELECT 'Inevitable' AS word, '피할 수 없는' AS meaning, 'Inevitable result.' AS example, 9 AS ord UNION ALL
     SELECT 'Juxtapose' AS word, '병치하다' AS meaning, 'Juxtapose colors.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 1;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 1;
 
--- High Stage_2
+-- Hard Stage_2
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 2;
+WHERE s.difficulty = 'hard' AND s.stage_number = 2;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -454,12 +454,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Loquacious' AS word, '말이 많은' AS meaning, 'A loquacious speaker.' AS example, 8 AS ord UNION ALL
     SELECT 'Pragmatic' AS word, '실용적인' AS meaning, 'A pragmatic approach.' AS example, 9 AS ord UNION ALL
     SELECT 'Resilient' AS word, '회복력 있는' AS meaning, 'A resilient economy.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 2;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 2;
 
--- High Stage_3
+-- Hard Stage_3
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 3;
+WHERE s.difficulty = 'hard' AND s.stage_number = 3;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -473,12 +473,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Pervasive' AS word, '만연한' AS meaning, 'Pervasive corruption.' AS example, 8 AS ord UNION ALL
     SELECT 'Refute' AS word, '반박하다' AS meaning, 'Refute a theory.' AS example, 9 AS ord UNION ALL
     SELECT 'Vindicate' AS word, '정당성을 입증하다' AS meaning, 'Vindicated by the result.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 3;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 3;
 
--- High Stage_4
+-- Hard Stage_4
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 4;
+WHERE s.difficulty = 'hard' AND s.stage_number = 4;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -492,12 +492,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Stagnant' AS word, '침체된' AS meaning, 'Stagnant economy.' AS example, 8 AS ord UNION ALL
     SELECT 'Transient' AS word, '일시적인' AS meaning, 'Transient fashion.' AS example, 9 AS ord UNION ALL
     SELECT 'Vicissitude' AS word, '우여곡절' AS meaning, 'Life''s vicissitudes.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 4;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 4;
 
--- High Stage_5
+-- Hard Stage_5
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 5;
+WHERE s.difficulty = 'hard' AND s.stage_number = 5;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -511,12 +511,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Subjective' AS word, '주관적인' AS meaning, 'Subjective view.' AS example, 8 AS ord UNION ALL
     SELECT 'Utilitarian' AS word, '공리주의의' AS meaning, 'Utilitarian principles.' AS example, 9 AS ord UNION ALL
     SELECT 'Zealous' AS word, '열성적인' AS meaning, 'A zealous supporter.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 5;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 5;
 
--- High Stage_6
+-- Hard Stage_6
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 6;
+WHERE s.difficulty = 'hard' AND s.stage_number = 6;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -530,12 +530,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Cognitive' AS word, '인지의' AS meaning, 'Cognitive development.' AS example, 8 AS ord UNION ALL
     SELECT 'Inductive' AS word, '귀납적인' AS meaning, 'Inductive reasoning.' AS example, 9 AS ord UNION ALL
     SELECT 'Nuance' AS word, '뉘앙스, 미묘한 차이' AS meaning, 'Subtle nuances.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 6;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 6;
 
--- High Stage_7
+-- Hard Stage_7
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 7;
+WHERE s.difficulty = 'hard' AND s.stage_number = 7;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -549,12 +549,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Sovereignty' AS word, '주권' AS meaning, 'National sovereignty.' AS example, 8 AS ord UNION ALL
     SELECT 'Tyranny' AS word, '폭정' AS meaning, 'Against tyranny.' AS example, 9 AS ord UNION ALL
     SELECT 'Unanimous' AS word, '만장일치의' AS meaning, 'Unanimous decision.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 7;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 7;
 
--- High Stage_8
+-- Hard Stage_8
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 8;
+WHERE s.difficulty = 'hard' AND s.stage_number = 8;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -568,12 +568,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Recession' AS word, '경기 후퇴' AS meaning, 'Economic recession.' AS example, 8 AS ord UNION ALL
     SELECT 'Subsidy' AS word, '보조금' AS meaning, 'Government subsidy.' AS example, 9 AS ord UNION ALL
     SELECT 'Tariff' AS word, '관세' AS meaning, 'Protective tariffs.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 8;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 8;
 
--- High Stage_9
+-- Hard Stage_9
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 9;
+WHERE s.difficulty = 'hard' AND s.stage_number = 9;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -587,12 +587,12 @@ FROM stages s CROSS JOIN (
     SELECT 'Magnanimous' AS word, '도량이 넓은' AS meaning, 'A magnanimous winner.' AS example, 8 AS ord UNION ALL
     SELECT 'Narcissism' AS word, '자기애' AS meaning, 'Extreme narcissism.' AS example, 9 AS ord UNION ALL
     SELECT 'Venerable' AS word, '경건한, 존경받는' AS meaning, 'Venerable leader.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 9;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 9;
 
--- High Stage_10
+-- Hard Stage_10
 DELETE w FROM words w
 JOIN stages s ON s.id = w.stage_id
-WHERE s.difficulty = 'high' AND s.stage_number = 10;
+WHERE s.difficulty = 'hard' AND s.stage_number = 10;
 INSERT INTO words (created_at, stage_id, word, meaning, example, image_url, order_index)
 SELECT NOW(6), s.id, t.word, t.meaning, t.example, NULL, t.ord
 FROM stages s CROSS JOIN (
@@ -606,5 +606,5 @@ FROM stages s CROSS JOIN (
     SELECT 'Mundane' AS word, '일상적인, 세속적인' AS meaning, 'Mundane tasks.' AS example, 8 AS ord UNION ALL
     SELECT 'Opulent' AS word, '호화로운' AS meaning, 'Opulent lifestyle.' AS example, 9 AS ord UNION ALL
     SELECT 'Pristine' AS word, '오염되지 않은' AS meaning, 'Pristine forest.' AS example, 10 AS ord
-) t WHERE s.difficulty = 'high' AND s.stage_number = 10;
+) t WHERE s.difficulty = 'hard' AND s.stage_number = 10;
 

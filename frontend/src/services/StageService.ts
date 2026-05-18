@@ -2,6 +2,15 @@ import http from '../lib/axios';
 import { MOCK_STAGE } from '../api/mockData';
 import type { Stage, DifficultyLevel, StageInput } from '../types';
 
+function normalizeDifficulty(value: unknown): DifficultyLevel {
+  const raw = String(value ?? 'easy').toLowerCase();
+  if (raw === 'low') return 'easy';
+  if (raw === 'high') return 'hard';
+  if (raw === 'medium') return 'medium';
+  if (raw === 'hard') return 'hard';
+  return 'easy';
+}
+
 /**
  * Normalizes raw API responses into the frontend Stage type.
  * Backend words use the same contract as the frontend:
@@ -17,7 +26,7 @@ function normalizeStage(
 
   return {
     stageId: Number(s.stageId ?? s.id ?? stageId),
-    difficulty: (s.difficulty ?? 'low') as DifficultyLevel,
+    difficulty: normalizeDifficulty(s.difficulty),
     stageNumber: Number(s.stageNumber ?? s.level ?? 0),
     createdAt: String(s.createdAt ?? ''),
     updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
