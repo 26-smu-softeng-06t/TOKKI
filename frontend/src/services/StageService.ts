@@ -1,6 +1,6 @@
 import http from '../lib/axios';
 import { MOCK_STAGE } from '../api/mockData';
-import type { Stage, DifficultyLevel, StageInput } from '../types';
+import type { Stage, DifficultyLevel, StageInput, ExcelUploadPreview } from '../types';
 
 function normalizeDifficulty(value: unknown): DifficultyLevel {
   const raw = String(value ?? 'easy').toLowerCase();
@@ -93,5 +93,13 @@ export class StageService {
 
   static async batchUploadStages(stages: StageInput[]): Promise<void> {
     await http.post('/stages/batch', { stages });
+  }
+
+  static async previewExcelUpload(file: File): Promise<ExcelUploadPreview> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return (await http.post('/stages/excel/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })) as unknown as ExcelUploadPreview;
   }
 }

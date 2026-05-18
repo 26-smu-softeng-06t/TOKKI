@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { StageService } from '../services/StageService';
-import type { DifficultyLevel, Stage, StageInput } from '../types';
+import type { DifficultyLevel, ExcelUploadPreview, Stage, StageInput } from '../types';
 
 const SEED_DATA: StageInput[] = (['easy', 'medium', 'hard'] as DifficultyLevel[]).flatMap(
   (difficulty) =>
@@ -49,6 +49,9 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [previewingUpload, setPreviewingUpload] = useState(false);
+  const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [excelPreview, setExcelPreview] = useState<ExcelUploadPreview | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
 
@@ -127,6 +130,49 @@ export default function AdminPage() {
       fetchStages();
     } catch {
       toast.error('삭제에 실패했습니다.');
+    }
+  }
+
+  async function handleExcelFile(file: File | null) {
+    setExcelPreview(null);
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      toast.error('.xlsx 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('5MB 이하 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    setPreviewingUpload(true);
+    try {
+      const preview = await StageService.previewExcelUpload(file);
+      setExcelPreview(preview);
+      if (preview.valid) {
+        toast.success(`${preview.rowCount}개 행을 확인했습니다.`);
+      } else {
+        toast.error('엑셀 검증 오류를 확인해주세요.');
+      }
+    } catch {
+      toast.error('엑셀 파일을 미리보기 할 수 없습니다.');
+    } finally {
+      setPreviewingUpload(false);
+    }
+  }
+
+  async function handleConfirmExcelUpload() {
+    if (!excelPreview?.valid || excelPreview.stages.length === 0) return;
+    setUploadingExcel(true);
+    try {
+      await StageService.batchUploadStages(excelPreview.stages);
+      toast.success('엑셀 데이터가 DB에 반영되었습니다.');
+      setExcelPreview(null);
+      fetchStages();
+    } catch {
+      toast.error('엑셀 데이터 반영에 실패했습니다.');
+    } finally {
+      setUploadingExcel(false);
     }
   }
 
@@ -249,24 +295,57 @@ export default function AdminPage() {
               {saving ? 'Saving...' : '💾 Save Stage'}
             </button>
 
-            {/* Bulk Upload Stub */}
+            {/* Bulk Upload */}
             <div>
               <h3 className="text-sm font-bold text-slate-700 mb-2">📂 Bulk Upload (Excel)</h3>
-              <div
-                className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer"
-                onClick={() => toast.info('Phase 2에서 제공됩니다')}
-              >
-                <p className="text-sm text-slate-400">
-                  Drag &amp; drop .xlsx here or Browse File
-                </p>
-                <input type="file" accept=".xlsx" hidden />
-              </div>
+              <label className="block border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition-colors">
+                <span className="block text-sm text-slate-500">
+                  {previewingUpload ? 'Checking file...' : 'Choose .xlsx file for preview'}
+                </span>
+                <span className="block text-xs text-slate-400 mt-1">difficulty, stageNumber, orderIndex, word, meaning</span>
+                <input
+                  type="file"
+                  accept=".xlsx"
+                  disabled={previewingUpload}
+                  className="hidden"
+                  onChange={(e) => handleExcelFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+
+              {excelPreview && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-600 mb-2">
+                    <span>{excelPreview.rowCount} rows</span>
+                    <span>{excelPreview.stages.length} stages</span>
+                  </div>
+                  {excelPreview.errors.length > 0 ? (
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {excelPreview.errors.map((error, index) => (
+                        <p key={`${error.rowNumber}-${error.field}-${index}`} className="text-xs text-red-600">
+                          Row {error.rowNumber} · {error.field}: {error.message}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {excelPreview.stages.slice(0, 5).map((stage) => (
+                        <p key={`${stage.difficulty}-${stage.stageNumber}`} className="text-xs text-slate-600">
+                          {stage.difficulty} Stage {stage.stageNumber}: {stage.words.length} words
+                        </p>
+                      ))}
+                      {excelPreview.stages.length > 5 && (
+                        <p className="text-xs text-slate-400">+ {excelPreview.stages.length - 5} more stages</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <button
-                disabled
-                onClick={() => toast.info('Phase 2에서 제공됩니다')}
-                className="mt-2 w-full py-2 bg-slate-100 text-slate-400 rounded-lg text-sm font-medium cursor-not-allowed"
+                disabled={!excelPreview?.valid || uploadingExcel}
+                onClick={handleConfirmExcelUpload}
+                className="mt-2 w-full py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
               >
-                Upload to DB
+                {uploadingExcel ? 'Uploading...' : 'Upload to DB'}
               </button>
             </div>
           </div>

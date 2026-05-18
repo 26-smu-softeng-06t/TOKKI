@@ -47,7 +47,21 @@ export interface WordInput {
   word: string;
   meaning: string;
   example: string | null;
+  imageUrl?: string | null;
   orderIndex: number;
+}
+
+export interface ExcelUploadRowError {
+  rowNumber: number;
+  field: string;
+  message: string;
+}
+
+export interface ExcelUploadPreview {
+  valid: boolean;
+  rowCount: number;
+  stages: StageInput[];
+  errors: ExcelUploadRowError[];
 }
 
 export interface IncorrectWord {
