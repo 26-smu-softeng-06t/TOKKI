@@ -155,11 +155,7 @@ public class ExcelStageUploadService {
         }
 
         try {
-            DifficultyLevel difficulty = DifficultyLevel.from(value);
-            if (difficulty == null) {
-                errors.add(new ExcelUploadRowError(rowNumber, "difficulty", "필수값입니다."));
-            }
-            return difficulty;
+            return DifficultyLevel.from(value);
         } catch (IllegalArgumentException e) {
             errors.add(new ExcelUploadRowError(rowNumber, "difficulty", "easy, medium, hard 중 하나여야 합니다."));
             return null;
