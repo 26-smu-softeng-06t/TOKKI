@@ -13,8 +13,6 @@ import org.springframework.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -23,9 +21,6 @@ public class FirebaseConfig {
 
     @Value("${firebase.project-id}")
     private String projectId;
-
-    @Value("${firebase.service-account-path:}")
-    private String serviceAccountPath;
 
     @Value("${firebase.client-email}")
     private String clientEmail;
@@ -37,21 +32,6 @@ public class FirebaseConfig {
     public void initializeFirebase() throws IOException {
         if (!FirebaseApp.getApps().isEmpty()) {
             return;
-        }
-
-        if (StringUtils.hasText(serviceAccountPath)) {
-            Path credentialsPath = resolveServiceAccountPath(serviceAccountPath);
-            if (credentialsPath != null) {
-                try (InputStream serviceAccount = Files.newInputStream(credentialsPath)) {
-                    FirebaseOptions options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-                    FirebaseApp.initializeApp(options);
-                    log.info("Firebase initialized from service-account file: {}", credentialsPath.getFileName());
-                }
-                return;
-            }
-            log.warn("Firebase service-account file not found; falling back to env credentials");
         }
 
         if (!StringUtils.hasText(projectId) || !StringUtils.hasText(clientEmail) || !StringUtils.hasText(privateKey)) {
@@ -66,20 +46,6 @@ public class FirebaseConfig {
                 .build();
         FirebaseApp.initializeApp(options);
         log.info("Firebase initialized for project: {}", projectId);
-    }
-
-    private Path resolveServiceAccountPath(String configuredPath) {
-        Path path = Path.of(configuredPath);
-        if (Files.exists(path)) {
-            return path.toAbsolutePath().normalize();
-        }
-
-        Path parentRelativePath = Path.of("..").resolve(configuredPath).normalize();
-        if (Files.exists(parentRelativePath)) {
-            return parentRelativePath.toAbsolutePath().normalize();
-        }
-
-        return null;
     }
 
     private String buildServiceAccountJson(String projectId, String clientEmail, String privateKey) {
