@@ -29,6 +29,18 @@ export function setStoredAccessToken(token: string | null): void {
   }
 }
 
+const AUTH_EXPIRED_EVENT = 'tokki:auth-expired';
+
+export function emitAuthExpired(): void {
+  window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+}
+
+export function onAuthExpired(callback: () => void): () => void {
+  const handler = () => callback();
+  window.addEventListener(AUTH_EXPIRED_EVENT, handler);
+  return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handler);
+}
+
 const apiClient = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
@@ -54,7 +66,22 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response.data?.data ?? response.data,
   (error) => {
-    const code = error.response?.data?.error?.code ?? error.message;
+    const status = error.response?.status;
+    const errorCode = error.response?.data?.error?.code;
+
+    const isAuthError =
+      status === 401 ||
+      errorCode === 'AUTH_REQUIRED' ||
+      errorCode === 'TOKEN_EXPIRED' ||
+      errorCode === 'TOKEN_INVALID' ||
+      errorCode === 'UNAUTHORIZED';
+
+    if (isAuthError && !shouldUseDevAuth) {
+      setStoredAccessToken(null);
+      emitAuthExpired();
+    }
+
+    const code = errorCode ?? error.message;
     return Promise.reject(new Error(code));
   },
 );

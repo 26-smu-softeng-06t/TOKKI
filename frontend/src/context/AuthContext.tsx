@@ -1,5 +1,7 @@
 import { createContext, useEffect, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
+import { onAuthExpired } from '../lib/axios';
 import type { AppUser } from '../types';
 
 interface AuthContextType {
@@ -16,6 +18,7 @@ const DEV = import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_USER === 'true'
 const DEV_USER: AppUser = { uid: 'dev-uid', email: 'dev@localhost', role: 'admin' };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<AppUser | null>(DEV ? DEV_USER : null);
   const [loading, setLoading] = useState(!DEV);
 
@@ -43,6 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (DEV) return;
+
+    const unsubscribe = onAuthExpired(() => {
+      setUser(null);
+      navigate('/login', { replace: true });
+    });
+
+    return unsubscribe;
+  }, [navigate]);
 
   return (
     <AuthContext.Provider value={{ user, loading, setAuthenticatedUser: setUser, refreshUser, logout }}>

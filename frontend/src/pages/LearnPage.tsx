@@ -4,8 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, AlertCircle, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StageService } from '../services/StageService';
+import { WordRelationService } from '../services/WordRelationService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import type { Word } from '../types';
+import type { Word, WordRelation } from '../types';
 
 export default function LearnPage() {
   const { stageId } = useParams<{ stageId: string }>();
@@ -16,6 +17,9 @@ export default function LearnPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [relations, setRelations] = useState<WordRelation[]>([]);
+  const [loadingRelations, setLoadingRelations] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
   useEffect(() => {
     if (!stageId) return;
@@ -38,6 +42,62 @@ export default function LearnPage() {
     void load();
     return () => { cancelled = true; };
   }, [stageId]);
+
+  useEffect(() => {
+    const word = words[currentIndex];
+    if (!word) return;
+
+    setLoadingRelations(true);
+    WordRelationService.getRelations(word.wordId)
+      .then(setRelations)
+      .catch(() => setRelations([]))
+      .finally(() => setLoadingRelations(false));
+  }, [currentIndex, words]);
+
+  const speakWord = (word: string) => {
+    if (!window.speechSynthesis) {
+      toast.error('TTS를 지원하지 않는 브라우저입니다.');
+      return;
+    }
+
+    if (!word || word.trim() === '') {
+      toast.error('발음할 단어가 없습니다.');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => {
+      setSpeaking(false);
+      toast.error('발음 재생 중 오류가 발생했습니다.');
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const getRelationBadgeClass = (type: string) => {
+    switch (type) {
+      case 'SYNONYM': return 'bg-blue-100 text-blue-700';
+      case 'ANTONYM': return 'bg-red-100 text-red-700';
+      case 'RELATED': return 'bg-green-100 text-green-700';
+      default: return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const getRelationLabel = (type: string) => {
+    switch (type) {
+      case 'SYNONYM': return '유의어';
+      case 'ANTONYM': return '반의어';
+      case 'RELATED': return '관련어';
+      default: return type;
+    }
+  };
 
   if (loading) {
     return (
@@ -106,11 +166,16 @@ export default function LearnPage() {
 
             <div className="flex justify-center mb-4">
               <button
-                onClick={() => toast.info('Phase 2에서 제공됩니다')}
-                className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
-                aria-label="Pronounce word"
+                onClick={() => speakWord(word.word)}
+                disabled={speaking}
+                className={`p-3 rounded-full transition-all ${
+                  speaking
+                    ? 'bg-indigo-100 text-indigo-600 animate-pulse'
+                    : 'hover:bg-slate-100 text-slate-500 hover:text-indigo-600'
+                }`}
+                aria-label={`발음 듣기: ${word.word}`}
               >
-                <Volume2 className="w-5 h-5" />
+                <Volume2 className="w-6 h-6" />
               </button>
             </div>
 
@@ -124,9 +189,33 @@ export default function LearnPage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Related Words stub */}
-        <div className="bg-white rounded-2xl border border-slate-100 px-6 py-4 text-center text-slate-400 text-sm">
-          Related words (Phase 2)
+        {/* Related Words */}
+        <div className="bg-white rounded-2xl border border-slate-100 px-6 py-4">
+          <h3 className="text-sm font-bold text-slate-700 mb-3">관련 단어</h3>
+          {loadingRelations ? (
+            <div className="text-center py-4 text-slate-400 text-sm">
+              로딩 중...
+            </div>
+          ) : relations.length === 0 ? (
+            <div className="text-center py-4 text-slate-400 text-sm">
+              관련 단어가 없습니다
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {relations.map((relation) => (
+                <div
+                  key={relation.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-100"
+                >
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getRelationBadgeClass(relation.relationType)}`}>
+                    {getRelationLabel(relation.relationType)}
+                  </span>
+                  <span className="font-medium text-slate-800">{relation.relatedWord}</span>
+                  <span className="text-sm text-slate-500">{relation.relatedMeaning}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
