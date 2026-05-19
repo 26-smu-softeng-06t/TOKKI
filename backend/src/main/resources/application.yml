@@ -79,7 +79,6 @@ tokki:
       measurement-id: ${VITE_FIREBASE_MEASUREMENT_ID:}
 
 firebase:
-  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
   project-id: ${FIREBASE_PROJECT_ID:${VITE_FIREBASE_PROJECT_ID:}}
   client-email: ${FIREBASE_CLIENT_EMAIL:}
   private-key: ${FIREBASE_PRIVATE_KEY:}
