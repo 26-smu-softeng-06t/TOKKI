@@ -41,14 +41,17 @@ public class FirebaseConfig {
 
         if (StringUtils.hasText(serviceAccountPath)) {
             Path credentialsPath = resolveServiceAccountPath(serviceAccountPath);
-            try (InputStream serviceAccount = Files.newInputStream(credentialsPath)) {
-                FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
-                FirebaseApp.initializeApp(options);
-                log.info("Firebase initialized from service-account file: {}", credentialsPath.getFileName());
+            if (credentialsPath != null) {
+                try (InputStream serviceAccount = Files.newInputStream(credentialsPath)) {
+                    FirebaseOptions options = FirebaseOptions.builder()
+                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                            .build();
+                    FirebaseApp.initializeApp(options);
+                    log.info("Firebase initialized from service-account file: {}", credentialsPath.getFileName());
+                }
+                return;
             }
-            return;
+            log.warn("Firebase service-account file not found; falling back to env credentials");
         }
 
         if (!StringUtils.hasText(projectId) || !StringUtils.hasText(clientEmail) || !StringUtils.hasText(privateKey)) {
@@ -65,7 +68,7 @@ public class FirebaseConfig {
         log.info("Firebase initialized for project: {}", projectId);
     }
 
-    private Path resolveServiceAccountPath(String configuredPath) throws IOException {
+    private Path resolveServiceAccountPath(String configuredPath) {
         Path path = Path.of(configuredPath);
         if (Files.exists(path)) {
             return path.toAbsolutePath().normalize();
@@ -76,7 +79,7 @@ public class FirebaseConfig {
             return parentRelativePath.toAbsolutePath().normalize();
         }
 
-        throw new IOException("Firebase service account file not found: " + configuredPath);
+        return null;
     }
 
     private String buildServiceAccountJson(String projectId, String clientEmail, String privateKey) {
