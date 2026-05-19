@@ -227,6 +227,10 @@ frontend/dist/
 
 # misc
 *.pem
+*.pub
+*.key
+id_rsa*
+id_ed25519*
 
 # debug
 npm-debug.log*
@@ -243,6 +247,7 @@ yarn-error.log*
 
 # Firebase service account key files
 *-firebase-*.json
+*-firebase-adminsdk-*.json
 serviceAccountKey.json
 
 # vercel
@@ -694,6 +699,13 @@ FodyWeavers.xsd
 # Firebase service account credentials
 *firebase-adminsdk*.json
 serviceAccount*.json
+
+# Local CI/CD and deployment secrets
+.env.cicd
+.env.production
+.env.staging
+firebase-service-account*.json
+google-service-account*.json
 
 # Local working notes
 notes/
