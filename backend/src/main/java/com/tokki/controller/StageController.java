@@ -2,13 +2,17 @@ package com.tokki.controller;
 
 import com.tokki.dto.request.BatchStageRequest;
 import com.tokki.dto.request.CreateStageRequest;
+import com.tokki.dto.response.ExcelUploadPreviewResponse;
 import com.tokki.dto.response.StageResponse;
 import com.tokki.dto.response.WordResponse;
+import com.tokki.service.ExcelStageUploadService;
 import com.tokki.service.StageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,6 +22,7 @@ import java.util.List;
 public class StageController {
 
     private final StageService stageService;
+    private final ExcelStageUploadService excelStageUploadService;
 
     @GetMapping
     public ResponseEntity<List<StageResponse>> getStages(
@@ -57,5 +62,10 @@ public class StageController {
     @PostMapping("/batch")
     public ResponseEntity<List<StageResponse>> batchUploadStages(@Valid @RequestBody BatchStageRequest request) {
         return ResponseEntity.ok(stageService.batchUpsertStages(request));
+    }
+
+    @PostMapping(value = "/excel/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ExcelUploadPreviewResponse> previewExcelUpload(@RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(excelStageUploadService.preview(file));
     }
 }
