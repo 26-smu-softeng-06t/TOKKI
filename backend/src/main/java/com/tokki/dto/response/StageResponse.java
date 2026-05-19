@@ -1,7 +1,6 @@
 package com.tokki.dto.response;
 
 import com.tokki.domain.Stage;
-import com.tokki.dto.response.WordResponse;
 import lombok.Builder;
 import lombok.Getter;
 

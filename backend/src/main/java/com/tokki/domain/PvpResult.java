@@ -38,4 +38,8 @@ public class PvpResult {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void updateResult(String result) {
+        this.result = result;
+    }
 }

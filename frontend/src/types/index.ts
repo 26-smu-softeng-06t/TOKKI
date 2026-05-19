@@ -103,15 +103,20 @@ export interface WordRelation {
   id: number;
   wordId: number;
   relatedWordId: number;
+  relatedWord: string;
+  relatedMeaning: string;
   relationType: string;
 }
 
 export interface Ranking {
   id: number;
-  uid: string;
-  score: number;
-  rankPosition: number;
+  wordId: number;
+  word: string;
+  meaning: string;
+  missCount: number;
+  rank: number;
   period: string;
+  snapshotDate: string;
 }
 
 export interface PvpRoom {

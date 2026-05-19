@@ -78,6 +78,7 @@ public class PvpService {
         if (existing.size() == 1) {
             PvpResult opponent = existing.get(0);
             String opponentResult = result.equals("WIN") ? "LOSE" : result.equals("LOSE") ? "WIN" : "DRAW";
+            opponent.updateResult(opponentResult);
             // Opponent result is already saved; mark room complete
             room.complete();
             pvpRoomRepository.save(room);

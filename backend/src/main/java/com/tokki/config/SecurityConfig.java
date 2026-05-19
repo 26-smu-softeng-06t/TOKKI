@@ -86,8 +86,8 @@ public class SecurityConfig {
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler(oauth2FailureHandler)
                 )
-                .addFilterBefore(devAuthenticationFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(devAuthenticationFilter, JwtAuthenticationFilter.class)
                 .addFilterAfter(firebaseTokenFilter, JwtAuthenticationFilter.class)
                 .build();
     }

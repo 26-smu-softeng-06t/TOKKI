@@ -2,7 +2,7 @@ import http from '../lib/axios';
 import type { Ranking } from '../types';
 
 export class RankingService {
-  static async getRankings(): Promise<Ranking[]> {
-    return (await http.get('/rankings')) as unknown as Ranking[];
+  static async getRankings(period?: string): Promise<Ranking[]> {
+    return http.get('/rankings', { params: { period } });
   }
 }

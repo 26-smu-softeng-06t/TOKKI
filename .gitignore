@@ -719,5 +719,12 @@ Diagram&ERD&명세서/
 !CLAUDE.md
 !GEMINI.md
 !.github/copilot-instructions.md
+
 # Local editor settings
 .vscode/
+
+# plan files
+plan.md
+
+# Local Gradle cache
+.gradle-user-home/
