@@ -710,5 +710,14 @@ google-service-account*.json
 # Local working notes
 notes/
 
+# Local AI prompt/spec reference folders
+Prompts/
+Diagram&ERD&명세서/
+
+# Tracked AI agent entrypoints
+!AGENTS.md
+!CLAUDE.md
+!GEMINI.md
+!.github/copilot-instructions.md
 # Local editor settings
 .vscode/
