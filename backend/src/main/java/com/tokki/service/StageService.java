@@ -131,23 +131,44 @@ public class StageService {
         return StageResponse.from(stage, getWordsByStage(stage.getId()));
     }
 
-    private void replaceWords(Stage stage, List<StageWordRequest> words) {
-        wordRepository.deleteByStageId(stage.getId());
-        if (words == null || words.isEmpty()) {
+    private void replaceWords(Stage stage, List<StageWordRequest> newWords) {
+        if (newWords == null || newWords.isEmpty()) {
             return;
         }
-        List<Word> newWords = words.stream()
+        List<Word> existing = wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(stage.getId());
+        Map<Integer, Word> existingByOrder = existing.stream()
+                .collect(Collectors.toMap(Word::getOrderIndex, w -> w, (a, b) -> b));
+        var incomingIndexes = newWords.stream()
+                .map(StageWordRequest::getOrderIndex)
+                .collect(Collectors.toSet());
+
+        List<Word> toSave = newWords.stream()
                 .sorted(Comparator.comparing(StageWordRequest::getOrderIndex))
-                .map(word -> Word.builder()
-                        .stage(stage)
-                        .word(word.getWord())
-                        .meaning(word.getMeaning())
-                        .example(word.getExample())
-                        .imageUrl(word.getImageUrl())
-                        .orderIndex(word.getOrderIndex())
-                        .build())
+                .map(req -> {
+                    Word ex = existingByOrder.get(req.getOrderIndex());
+                    if (ex != null) {
+                        ex.update(req.getWord(), req.getMeaning(), req.getExample(), req.getImageUrl(), req.getOrderIndex());
+                        return ex;
+                    }
+                    return Word.builder()
+                            .stage(stage)
+                            .word(req.getWord())
+                            .meaning(req.getMeaning())
+                            .example(req.getExample())
+                            .imageUrl(req.getImageUrl())
+                            .orderIndex(req.getOrderIndex())
+                            .build();
+                })
                 .toList();
-        wordRepository.saveAll(newWords);
+
+        List<Word> toDelete = existing.stream()
+                .filter(w -> !incomingIndexes.contains(w.getOrderIndex()))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            wordRepository.deleteAll(toDelete);
+        }
+
+        wordRepository.saveAll(toSave);
     }
 
     private Stage getStageEntity(Long stageId) {
