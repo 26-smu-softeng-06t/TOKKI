@@ -7,6 +7,25 @@ import {
 } from './OfflineProgressQueue';
 
 export class ProgressService {
+  static async getAllProgress(): Promise<Map<number, UserProgress>> {
+    try {
+      const all = (await http.get('/progress')) as unknown as UserProgress[];
+      const map = new Map<number, UserProgress>(all.map((p) => [p.stageId, p]));
+      for (const item of OfflineProgressQueue.all()) {
+        const p = item.payload as UserProgress;
+        if (p.stageId !== undefined && !map.has(p.stageId)) map.set(p.stageId, p);
+      }
+      return map;
+    } catch {
+      const map = new Map<number, UserProgress>();
+      for (const item of OfflineProgressQueue.all()) {
+        const p = item.payload as UserProgress;
+        if (p.stageId !== undefined) map.set(p.stageId, p);
+      }
+      return map;
+    }
+  }
+
   static async getProgress(stageId: number): Promise<UserProgress | null> {
     try {
       const progresses = (await http.get('/progress')) as unknown as UserProgress[];

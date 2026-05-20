@@ -28,23 +28,13 @@ export default function SelectPage() {
 
     const load = async () => {
       try {
-        const allStages = await StageService.getStages();
+        const [allStages, progressMap] = await Promise.all([
+          StageService.getStages(),
+          ProgressService.getAllProgress().catch(() => new Map<number, UserProgress>()),
+        ]);
         if (cancelled) return;
         setStages(allStages);
-
-        const progressResults = await Promise.all(
-          allStages.map((s) =>
-            ProgressService.getProgress(s.stageId).catch(() => null)
-          )
-        );
-        if (cancelled) return;
-
-        const map = new Map<number, UserProgress>();
-        allStages.forEach((s, i) => {
-          const p = progressResults[i];
-          if (p) map.set(s.stageId, p);
-        });
-        setProgresses(map);
+        setProgresses(progressMap);
       } catch {
         // network error — show empty state
       } finally {
