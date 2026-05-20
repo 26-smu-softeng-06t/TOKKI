@@ -68,10 +68,10 @@ export default function LoginCallbackPage() {
         <p className="text-slate-500 mt-2 mb-6">{user.email}</p>
 
         <button
-          onClick={() => navigate(user.role === 'admin' ? '/admin' : '/', { replace: true })}
+          onClick={() => navigate('/', { replace: true })}
           className="bg-indigo-600 hover:bg-indigo-700 text-white w-full rounded-lg py-3 font-medium transition-colors"
         >
-          {user.role === 'admin' ? 'Admin Panel로 이동' : '시작하기'}
+          시작하기
         </button>
 
         {user.role !== 'admin' && (
