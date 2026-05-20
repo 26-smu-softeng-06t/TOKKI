@@ -18,8 +18,7 @@ export class PvpService {
     return (await http.post('/pvp/results', result)) as unknown as PvpResult;
   }
 
-  // Phase 3: backend endpoint not yet implemented (PATCH /pvp/rooms/:roomId/complete)
   static async completeRoom(roomId: number): Promise<PvpRoom> {
-    return (await http.patch(`/pvp/rooms/${roomId}/complete`)) as unknown as PvpRoom;
+    return (await http.post(`/pvp/rooms/${roomId}/complete`, null)) as unknown as PvpRoom;
   }
 }
