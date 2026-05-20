@@ -67,6 +67,7 @@ jobs:
             SPRING_DATASOURCE_URL
             JWT_SECRET
             ADMIN_SECRET_KEY
+            VITE_API_BASE_URL
             VITE_FIREBASE_API_KEY
             VITE_FIREBASE_AUTH_DOMAIN
             VITE_FIREBASE_PROJECT_ID
@@ -150,10 +151,16 @@ jobs:
           npm ci
 
       - name: Build frontend (Vite)
-        env:
-          VITE_API_BASE_URL: ""
         run: |
           cd frontend
+          # Source TOKKI_ENV for VITE_ variables
+          if [ -f ../.env ]; then
+            set -o allexport
+            source ../.env
+            set +o allexport
+          fi
+          # Ensure API URL is relative for production
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-}"
           npm run build
 
       - name: Verify frontend dist
