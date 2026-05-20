@@ -39,7 +39,7 @@ All notable changes to TOKKI will be documented in this file.
 
 ### Known Issues
 - 번들 크기 500KB 초과 (코드 스플릿 필요)
-- 자동화 테스트 미도입
+- 프론트엔드/E2E 테스트 미도입 (백엔드 JUnit 테스트는 존재)
 
 ### Next Steps
 - 배포 환경 구축

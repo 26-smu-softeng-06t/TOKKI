@@ -8,10 +8,22 @@ interface UsePvpOptions {
   onRoomState?: (playerCount: number) => void;
 }
 
+interface HandlersRef {
+  onProgress?: (message: ProgressMessage) => void;
+  onBattleComplete?: (message: BattleResultMessage) => void;
+  onRoomState?: (playerCount: number) => void;
+}
+
 export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: UsePvpOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const handlersRef = useRef<HandlersRef>({ onProgress, onBattleComplete, onRoomState });
+
+  // Keep handlers ref up-to-date
+  useEffect(() => {
+    handlersRef.current = { onProgress, onBattleComplete, onRoomState };
+  }, [onProgress, onBattleComplete, onRoomState]);
 
   const connect = useCallback(() => {
     if (!roomId) return;
@@ -27,15 +39,16 @@ export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: Us
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        const handlers = handlersRef.current;
         switch (message.type) {
           case 'PROGRESS':
-            onProgress?.(message);
+            handlers.onProgress?.(message);
             break;
           case 'BATTLE_COMPLETE':
-            onBattleComplete?.(message);
+            handlers.onBattleComplete?.(message);
             break;
           case 'ROOM_STATE':
-            onRoomState?.(message.playerCount);
+            handlers.onRoomState?.(message.playerCount);
             break;
         }
       } catch (e) {
@@ -52,7 +65,7 @@ export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: Us
     };
 
     wsRef.current = ws;
-  }, [roomId, onProgress, onBattleComplete, onRoomState]);
+  }, [roomId]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

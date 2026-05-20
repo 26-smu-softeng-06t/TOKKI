@@ -36,6 +36,17 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-write-only: false
+
+      - name: Ensure gradlew exists
+        run: |
+          if [ ! -f "backend/gradlew" ]; then
+            echo "gradlew not found, generating wrapper..."
+            cd backend
+            gradle wrapper --gradle-version=8.5
+          fi
+          chmod +x backend/gradlew
 
       - name: Restore production environment
         env:
@@ -106,13 +117,8 @@ jobs:
       - name: Build backend (Gradle)
         run: |
           cd backend
-          if [ -f "./gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew clean build -x test --no-daemon
-          else
-            echo "gradlew not found. Using system gradle."
-            gradle clean build -x test --no-daemon
-          fi
+          chmod +x gradlew
+          ./gradlew clean build -x test --no-daemon
 
       - name: Verify backend JAR
         run: |

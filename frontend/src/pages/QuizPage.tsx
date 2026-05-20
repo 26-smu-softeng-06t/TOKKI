@@ -59,7 +59,6 @@ export default function QuizPage() {
   // PvP mode detection
   const isPvP = searchParams.get('pvp') === 'true';
   const pvpRoomId = searchParams.get('roomId');
-  const pvpSessionId = searchParams.get('sessionId');
   const startTimeRef = useRef<number>(Date.now());
 
   const { sendProgress, sendBattleComplete, disconnect: disconnectPvP } = usePvp({
@@ -305,7 +304,7 @@ export default function QuizPage() {
     const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
     // PvP mode: send battle complete message and navigate back to PvP page
-    if (isPvP && pvpRoomId && pvpSessionId) {
+    if (isPvP && pvpRoomId) {
       try {
         await QuizSessionService.saveQuizResult({
           stageId: sId,
@@ -318,13 +317,13 @@ export default function QuizPage() {
           })),
         });
 
-        // Send battle complete via WebSocket
+        // Send battle complete via WebSocket (winner determined server-side)
         sendBattleComplete({
-          winnerId: user.uid, // Will be determined server-side
+          winnerId: user.uid,
           hostScore: score,
-          guestScore: 0, // Will be filled by opponent
+          guestScore: 0,
           hostTime: elapsedTime,
-          guestTime: 0, // Will be filled by opponent
+          guestTime: 0,
         });
 
         disconnectPvP();

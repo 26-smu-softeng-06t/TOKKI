@@ -123,6 +123,7 @@ export default function PvpPage() {
         <div className="grid grid-cols-3 items-center">
           <button
             onClick={handleExit}
+            aria-label="뒤로가기"
             className="justify-self-start rounded-full hover:bg-white p-2 transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
