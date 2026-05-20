@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sword, Users, Copy, Check, Trophy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,9 +25,25 @@ export default function PvpPage() {
   const [playerCount, setPlayerCount] = useState(1);
   const [battleResult, setBattleResult] = useState<BattleResultMessage | null>(null);
 
+  // Ref to store the latest startGame function
+  const startGameRef = useRef(() => {
+    if (!room) return;
+    setPhase('playing');
+    navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}`);
+  });
+
+  // Update ref when room changes
+  useEffect(() => {
+    startGameRef.current = () => {
+      if (!room) return;
+      setPhase('playing');
+      navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}`);
+    };
+  }, [room, navigate]);
+
   const { connected, disconnect: disconnectWs } = usePvp({
     roomId: room?.id ?? null,
-    onProgress: () => {}, // Opponent progress handled separately
+    onProgress: () => {},
     onBattleComplete: (message) => {
       setBattleResult(message);
       setPhase('result');
@@ -35,7 +51,7 @@ export default function PvpPage() {
     onRoomState: (count) => {
       setPlayerCount(count);
       if (count === 2 && phase === 'waiting') {
-        startGame();
+        startGameRef.current();
       }
     },
   });
@@ -52,11 +68,22 @@ export default function PvpPage() {
     loadStages();
   }, []);
 
+  const joinRoomById = useCallback(async (id: string) => {
+    try {
+      const joinedRoom = await PvpService.joinRoom(id);
+      setRoom(joinedRoom);
+      setPhase('waiting');
+    } catch {
+      toast.error('Failed to join room');
+      navigate('/pvp');
+    }
+  }, [navigate]);
+
   useEffect(() => {
     if (roomId && !room) {
       joinRoomById(roomId);
     }
-  }, [roomId]);
+  }, [roomId, room, joinRoomById]);
 
   const createRoom = async () => {
     if (!selectedStage) return;
@@ -69,23 +96,6 @@ export default function PvpPage() {
       toast.error('Failed to create room');
     }
   };
-
-  const joinRoomById = async (id: string) => {
-    try {
-      const joinedRoom = await PvpService.joinRoom(id);
-      setRoom(joinedRoom);
-      setPhase('waiting');
-    } catch {
-      toast.error('Failed to join room');
-      navigate('/pvp');
-    }
-  };
-
-  useEffect(() => {
-    if (roomId && !room) {
-      joinRoomById(roomId);
-    }
-  }, [roomId]);
 
   const joinByCode = () => {
     if (!joinCode.trim()) {
@@ -101,12 +111,6 @@ export default function PvpPage() {
     setCopied(true);
     toast.success('Invite code copied!');
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const startGame = () => {
-    if (!room) return;
-    setPhase('playing');
-    navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}`);
   };
 
   const handleExit = () => {

@@ -16,6 +16,10 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
