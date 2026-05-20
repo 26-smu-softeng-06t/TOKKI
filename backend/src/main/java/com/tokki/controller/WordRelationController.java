@@ -1,5 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
 import com.tokki.dto.response.WordRelationResponse;
 import com.tokki.service.WordRelationService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,7 @@ public class WordRelationController {
     private final WordRelationService wordRelationService;
 
     @GetMapping("/{wordId}")
-    public ResponseEntity<List<WordRelationResponse>> getRelations(@PathVariable Long wordId) {
-        return ResponseEntity.ok(wordRelationService.getRelations(wordId));
+    public ResponseEntity<ApiResponse<List<WordRelationResponse>>> getRelations(@PathVariable Long wordId) {
+        return ResponseEntity.ok(ApiResponses.data(wordRelationService.getRelations(wordId)));
     }
 }

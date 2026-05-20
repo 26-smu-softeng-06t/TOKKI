@@ -1,5 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
 import com.tokki.dto.request.CreateRoomRequest;
 import com.tokki.dto.request.JoinRoomRequest;
 import com.tokki.dto.request.SaveResultRequest;
@@ -23,28 +25,28 @@ public class PvpController {
     private final PvpService pvpService;
 
     @GetMapping("/rooms")
-    public ResponseEntity<List<PvpRoomResponse>> getWaitingRooms() {
-        return ResponseEntity.ok(pvpService.getWaitingRooms());
+    public ResponseEntity<ApiResponse<List<PvpRoomResponse>>> getWaitingRooms() {
+        return ResponseEntity.ok(ApiResponses.data(pvpService.getWaitingRooms()));
     }
 
     @PostMapping("/rooms")
-    public ResponseEntity<PvpRoomResponse> createRoom(
+    public ResponseEntity<ApiResponse<PvpRoomResponse>> createRoom(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody CreateRoomRequest request) {
-        return ResponseEntity.ok(pvpService.createRoom(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(pvpService.createRoom(authUser.getUid(), request)));
     }
 
     @PostMapping("/rooms/join")
-    public ResponseEntity<PvpRoomResponse> joinRoom(
+    public ResponseEntity<ApiResponse<PvpRoomResponse>> joinRoom(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody JoinRoomRequest request) {
-        return ResponseEntity.ok(pvpService.joinRoom(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(pvpService.joinRoom(authUser.getUid(), request)));
     }
 
     @PostMapping("/results")
-    public ResponseEntity<PvpResultResponse> saveResult(
+    public ResponseEntity<ApiResponse<PvpResultResponse>> saveResult(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody SaveResultRequest request) {
-        return ResponseEntity.ok(pvpService.saveResult(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(pvpService.saveResult(authUser.getUid(), request)));
     }
 }

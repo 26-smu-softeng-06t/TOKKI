@@ -1,5 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
 import com.tokki.dto.request.SaveSessionRequest;
 import com.tokki.dto.request.UpsertDraftSessionRequest;
 import com.tokki.dto.response.QuizSessionResponse;
@@ -21,38 +23,38 @@ public class QuizSessionController {
     private final QuizSessionService quizSessionService;
 
     @PostMapping
-    public ResponseEntity<QuizSessionResponse> saveSession(
+    public ResponseEntity<ApiResponse<QuizSessionResponse>> saveSession(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody SaveSessionRequest request) {
-        return ResponseEntity.ok(quizSessionService.saveSession(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(quizSessionService.saveSession(authUser.getUid(), request)));
     }
 
     @GetMapping
-    public ResponseEntity<List<QuizSessionResponse>> getSessions(
+    public ResponseEntity<ApiResponse<List<QuizSessionResponse>>> getSessions(
             @AuthenticationPrincipal AuthUser authUser,
             @RequestParam(required = false) Long stageId,
             @RequestParam(required = false) Boolean completed) {
         if (completed != null && completed) {
-            return ResponseEntity.ok(quizSessionService.getCompletedSessions(authUser.getUid(), stageId));
+            return ResponseEntity.ok(ApiResponses.data(quizSessionService.getCompletedSessions(authUser.getUid(), stageId)));
         }
         if (completed != null && !completed) {
-            return ResponseEntity.ok(quizSessionService.getDraftSessions(authUser.getUid()));
+            return ResponseEntity.ok(ApiResponses.data(quizSessionService.getDraftSessions(authUser.getUid())));
         }
-        return ResponseEntity.ok(quizSessionService.getUserSessions(authUser.getUid()));
+        return ResponseEntity.ok(ApiResponses.data(quizSessionService.getUserSessions(authUser.getUid())));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<QuizSessionResponse> getSession(
+    public ResponseEntity<ApiResponse<QuizSessionResponse>> getSession(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long id) {
-        return ResponseEntity.ok(quizSessionService.getSessionById(id, authUser.getUid()));
+        return ResponseEntity.ok(ApiResponses.data(quizSessionService.getSessionById(id, authUser.getUid())));
     }
 
     @PutMapping("/current")
-    public ResponseEntity<QuizSessionResponse> upsertDraftSession(
+    public ResponseEntity<ApiResponse<QuizSessionResponse>> upsertDraftSession(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody UpsertDraftSessionRequest request) {
-        return ResponseEntity.ok(quizSessionService.upsertDraftSession(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(quizSessionService.upsertDraftSession(authUser.getUid(), request)));
     }
 
     @DeleteMapping("/current")

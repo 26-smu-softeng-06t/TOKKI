@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +30,7 @@ public class StageService {
 
     @Transactional(readOnly = true)
     public List<StageResponse> getAllStages() {
-        return stageRepository.findAll().stream()
-                .sorted(stageComparator())
-                .map(StageResponse::from)
-                .toList();
+        return toResponsesWithWords(stageRepository.findAll());
     }
 
     @Transactional(readOnly = true)
@@ -45,17 +44,26 @@ public class StageService {
         if (difficulty == null) {
             throw new AppException(ErrorCode.INVALID_INPUT);
         }
-        if (stageNumber == null) {
-            return stageRepository.findByDifficulty(difficulty).stream()
-                    .sorted(stageComparator())
-                    .map(StageResponse::from)
-                    .toList();
-        }
-        return stageRepository.findByDifficultyAndStageNumber(difficulty, stageNumber)
-                .map(List::of)
-                .orElse(List.of())
+        List<Stage> stages = stageNumber == null
+                ? stageRepository.findByDifficulty(difficulty)
+                : stageRepository.findByDifficultyAndStageNumber(difficulty, stageNumber)
+                        .map(List::of).orElse(List.of());
+        return toResponsesWithWords(stages);
+    }
+
+    private List<StageResponse> toResponsesWithWords(List<Stage> stages) {
+        if (stages.isEmpty()) return List.of();
+        List<Long> ids = stages.stream().map(Stage::getId).toList();
+        Map<Long, List<WordResponse>> wordsByStage = wordRepository
+                .findByStageIdInOrderByOrderIndexAscIdAsc(ids)
                 .stream()
-                .map(StageResponse::from)
+                .collect(Collectors.groupingBy(
+                        w -> w.getStage().getId(),
+                        Collectors.mapping(WordResponse::from, Collectors.toList())
+                ));
+        return stages.stream()
+                .sorted(stageComparator())
+                .map(s -> StageResponse.from(s, wordsByStage.getOrDefault(s.getId(), List.of())))
                 .toList();
     }
 
@@ -123,23 +131,44 @@ public class StageService {
         return StageResponse.from(stage, getWordsByStage(stage.getId()));
     }
 
-    private void replaceWords(Stage stage, List<StageWordRequest> words) {
-        wordRepository.deleteByStageId(stage.getId());
-        if (words == null || words.isEmpty()) {
+    private void replaceWords(Stage stage, List<StageWordRequest> newWords) {
+        if (newWords == null || newWords.isEmpty()) {
             return;
         }
-        List<Word> newWords = words.stream()
+        List<Word> existing = wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(stage.getId());
+        Map<Integer, Word> existingByOrder = existing.stream()
+                .collect(Collectors.toMap(Word::getOrderIndex, w -> w, (a, b) -> b));
+        var incomingIndexes = newWords.stream()
+                .map(StageWordRequest::getOrderIndex)
+                .collect(Collectors.toSet());
+
+        List<Word> toSave = newWords.stream()
                 .sorted(Comparator.comparing(StageWordRequest::getOrderIndex))
-                .map(word -> Word.builder()
-                        .stage(stage)
-                        .word(word.getWord())
-                        .meaning(word.getMeaning())
-                        .example(word.getExample())
-                        .imageUrl(word.getImageUrl())
-                        .orderIndex(word.getOrderIndex())
-                        .build())
+                .map(req -> {
+                    Word ex = existingByOrder.get(req.getOrderIndex());
+                    if (ex != null) {
+                        ex.update(req.getWord(), req.getMeaning(), req.getExample(), req.getImageUrl(), req.getOrderIndex());
+                        return ex;
+                    }
+                    return Word.builder()
+                            .stage(stage)
+                            .word(req.getWord())
+                            .meaning(req.getMeaning())
+                            .example(req.getExample())
+                            .imageUrl(req.getImageUrl())
+                            .orderIndex(req.getOrderIndex())
+                            .build();
+                })
                 .toList();
-        wordRepository.saveAll(newWords);
+
+        List<Word> toDelete = existing.stream()
+                .filter(w -> !incomingIndexes.contains(w.getOrderIndex()))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            wordRepository.deleteAll(toDelete);
+        }
+
+        wordRepository.saveAll(toSave);
     }
 
     private Stage getStageEntity(Long stageId) {

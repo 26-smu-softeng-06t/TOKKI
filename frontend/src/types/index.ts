@@ -13,6 +13,7 @@ export interface AppUser {
 
 export interface User {
   uid: string;
+  nickname: string;
   email: string;
   role: UserRole;
   createdAt: ISO8601;
