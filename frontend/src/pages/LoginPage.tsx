@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setSigningIn(true);
     try {
-      const signedInUser = await AuthService.startGoogleSignIn();
+      await AuthService.startGoogleSignIn();
       navigate('/login/callback', { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '로그인에 실패했습니다');
