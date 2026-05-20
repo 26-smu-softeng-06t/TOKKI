@@ -17,8 +17,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 class StageServiceTest {
 
@@ -106,6 +110,117 @@ class StageServiceTest {
         assertThat(responseB.getWords()).hasSize(2);
         assertThat(responseB.getWords().get(0).getWord()).isEqualTo("cat");
         assertThat(responseB.getWords().get(1).getWord()).isEqualTo("dog");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void replaceWords_updatesExistingWordInPlaceAndPreservesId() {
+        Stage stage = Stage.builder()
+                .id(1L).difficulty(DifficultyLevel.easy).stageNumber(1)
+                .level(1).title("Easy Stage 1").description("Easy level - Stage 1")
+                .build();
+        Word existingWord = Word.builder()
+                .id(10L).stage(stage).word("apple").meaning("사과").orderIndex(1)
+                .build();
+
+        when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+        when(stageRepository.existsById(1L)).thenReturn(true);
+        when(wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(1L))
+                .thenReturn(List.of(existingWord));
+
+        CreateStageRequest request = new CreateStageRequest();
+        request.setDifficulty(DifficultyLevel.easy);
+        request.setStageNumber(1);
+        StageWordRequest wordReq = new StageWordRequest();
+        wordReq.setWord("orange");
+        wordReq.setMeaning("오렌지");
+        wordReq.setOrderIndex(1);
+        request.setWords(List.of(wordReq));
+
+        stageService.updateStage(1L, request);
+
+        ArgumentCaptor<List<Word>> captor = ArgumentCaptor.forClass(List.class);
+        verify(wordRepository).saveAll(captor.capture());
+        List<Word> saved = captor.getValue();
+        assertThat(saved).hasSize(1);
+        assertThat(saved.get(0).getId()).isEqualTo(10L);
+        assertThat(saved.get(0).getWord()).isEqualTo("orange");
+        verify(wordRepository, never()).deleteAll(any(List.class));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void replaceWords_insertsNewWordForNewOrderIndex() {
+        Stage stage = Stage.builder()
+                .id(1L).difficulty(DifficultyLevel.easy).stageNumber(1)
+                .level(1).title("Easy Stage 1").description("Easy level - Stage 1")
+                .build();
+        Word existingWord = Word.builder()
+                .id(10L).stage(stage).word("apple").meaning("사과").orderIndex(1)
+                .build();
+
+        when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+        when(stageRepository.existsById(1L)).thenReturn(true);
+        when(wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(1L))
+                .thenReturn(List.of(existingWord));
+
+        CreateStageRequest request = new CreateStageRequest();
+        request.setDifficulty(DifficultyLevel.easy);
+        request.setStageNumber(1);
+        StageWordRequest keepReq = new StageWordRequest();
+        keepReq.setWord("apple");
+        keepReq.setMeaning("사과");
+        keepReq.setOrderIndex(1);
+        StageWordRequest newReq = new StageWordRequest();
+        newReq.setWord("banana");
+        newReq.setMeaning("바나나");
+        newReq.setOrderIndex(2);
+        request.setWords(List.of(keepReq, newReq));
+
+        stageService.updateStage(1L, request);
+
+        ArgumentCaptor<List<Word>> captor = ArgumentCaptor.forClass(List.class);
+        verify(wordRepository).saveAll(captor.capture());
+        List<Word> saved = captor.getValue();
+        assertThat(saved).hasSize(2);
+        assertThat(saved.stream().anyMatch(w -> Long.valueOf(10L).equals(w.getId()))).isTrue();
+        assertThat(saved.stream().anyMatch(w -> w.getId() == null && "banana".equals(w.getWord()))).isTrue();
+        verify(wordRepository, never()).deleteAll(any(List.class));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void replaceWords_deletesWordRemovedFromIncomingList() {
+        Stage stage = Stage.builder()
+                .id(1L).difficulty(DifficultyLevel.easy).stageNumber(1)
+                .level(1).title("Easy Stage 1").description("Easy level - Stage 1")
+                .build();
+        Word word1 = Word.builder()
+                .id(10L).stage(stage).word("apple").meaning("사과").orderIndex(1)
+                .build();
+        Word word2 = Word.builder()
+                .id(11L).stage(stage).word("banana").meaning("바나나").orderIndex(2)
+                .build();
+
+        when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+        when(stageRepository.existsById(1L)).thenReturn(true);
+        when(wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(1L))
+                .thenReturn(List.of(word1, word2));
+
+        CreateStageRequest request = new CreateStageRequest();
+        request.setDifficulty(DifficultyLevel.easy);
+        request.setStageNumber(1);
+        StageWordRequest keepReq = new StageWordRequest();
+        keepReq.setWord("apple");
+        keepReq.setMeaning("사과");
+        keepReq.setOrderIndex(1);
+        request.setWords(List.of(keepReq));
+
+        stageService.updateStage(1L, request);
+
+        ArgumentCaptor<List<Word>> deleteCaptor = ArgumentCaptor.forClass(List.class);
+        verify(wordRepository).deleteAll(deleteCaptor.capture());
+        assertThat(deleteCaptor.getValue()).extracting(Word::getId).containsExactly(11L);
     }
 
     @Test

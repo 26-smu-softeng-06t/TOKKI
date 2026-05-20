@@ -137,7 +137,7 @@ public class StageService {
         }
         List<Word> existing = wordRepository.findByStageIdOrderByOrderIndexAscIdAsc(stage.getId());
         Map<Integer, Word> existingByOrder = existing.stream()
-                .collect(Collectors.toMap(Word::getOrderIndex, w -> w));
+                .collect(Collectors.toMap(Word::getOrderIndex, w -> w, (a, b) -> b));
         var incomingIndexes = newWords.stream()
                 .map(StageWordRequest::getOrderIndex)
                 .collect(Collectors.toSet());
