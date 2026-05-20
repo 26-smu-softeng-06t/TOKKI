@@ -34,17 +34,17 @@ jobs:
         with:
           cache-write-only: false
 
-      - name: Ensure gradlew exists
+      - name: Verify and fix gradlew
         run: |
-          if [ ! -f "backend/gradlew" ]; then
-            echo "gradlew not found, generating wrapper in backend/..."
-            # Create temporary settings.gradle to make backend the root project
-            echo "rootProject.name = 'backend'" > backend/settings.gradle
-            cd backend
-            gradle wrapper --gradle-version=8.5
-            cd ..
+          cd backend
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "⚠️ gradle-wrapper.jar missing, regenerating..."
+            # Install gradle temporarily to generate wrapper
+            curl -sL "https://services.gradle.org/distributions/gradle-8.5-bin.zip" -o /tmp/gradle.zip
+            unzip -q /tmp/gradle.zip -d /tmp
+            /tmp/gradle-8.5/bin/gradle wrapper --gradle-version=8.5
           fi
-          chmod +x backend/gradlew
+          chmod +x gradlew
 
       - name: Run backend tests (if exist)
         run: |
