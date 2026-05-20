@@ -38,16 +38,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-write-only: false
+          gradle-version: 8.5
 
-      - name: Verify and fix gradlew
+      - name: Verify gradlew
         run: |
           cd backend
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "⚠️ gradle-wrapper.jar missing, regenerating..."
-            # Install gradle temporarily to generate wrapper
-            curl -sL "https://services.gradle.org/distributions/gradle-8.5-bin.zip" -o /tmp/gradle.zip
-            unzip -q /tmp/gradle.zip -d /tmp
-            /tmp/gradle-8.5/bin/gradle wrapper --gradle-version=8.5
+            echo "⚠️ gradle-wrapper.jar missing, generating..."
+            gradle wrapper --gradle-version=8.5
           fi
           chmod +x gradlew
 
