@@ -29,7 +29,7 @@ function normalizeStage(
     difficulty: normalizeDifficulty(s.difficulty),
     stageNumber: Number(s.stageNumber ?? 0),
     createdAt: String(s.createdAt ?? ''),
-    updatedAt: String(s.updatedAt ?? ''),
+    updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
     words: ws.map((w, i) => ({
       wordId: Number(w.wordId ?? w.id ?? 0),
       stageId: Number(w.stageId ?? stageId),
