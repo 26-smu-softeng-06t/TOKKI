@@ -150,6 +150,8 @@ jobs:
           npm ci
 
       - name: Build frontend (Vite)
+        env:
+          VITE_API_BASE_URL: ""
         run: |
           cd frontend
           npm run build
