@@ -53,13 +53,10 @@ export class StageService {
         )
       : undefined;
     const stages = (await http.get('/stages', { params })) as unknown as Array<Record<string, unknown>>;
-    return Promise.all(
-      stages.map(async (stageRaw) => {
-        const stageId = Number(stageRaw.stageId ?? stageRaw.id ?? 0);
-        const wordsRaw = stageId > 0 ? await http.get(`/stages/${stageId}/words`) : [];
-        return normalizeStage(stageRaw, stageId, wordsRaw);
-      }),
-    );
+    return stages.map((stageRaw) => {
+      const stageId = Number(stageRaw.stageId ?? stageRaw.id ?? 0);
+      return normalizeStage(stageRaw, stageId, stageRaw.words);
+    });
   }
 
   static async getStageById(stageId: number): Promise<Stage> {
