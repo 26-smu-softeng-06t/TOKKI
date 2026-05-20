@@ -25,9 +25,9 @@ function normalizeStage(
   const ws = ((wordsRaw as unknown[]) ?? []) as Record<string, unknown>[];
 
   return {
-    stageId: Number(s.stageId ?? s.id ?? stageId),
+    stageId: Number(s.stageId ?? stageId),
     difficulty: normalizeDifficulty(s.difficulty),
-    stageNumber: Number(s.stageNumber ?? s.level ?? 0),
+    stageNumber: Number(s.stageNumber ?? 0),
     createdAt: String(s.createdAt ?? ''),
     updatedAt: String(s.updatedAt ?? s.createdAt ?? ''),
     words: ws.map((w, i) => ({

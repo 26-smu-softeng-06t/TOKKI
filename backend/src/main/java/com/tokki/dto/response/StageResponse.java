@@ -11,27 +11,17 @@ import java.util.List;
 @Builder
 public class StageResponse {
     private Long stageId;
-    private Long id;
-    private String title;
-    private String description;
-    private Integer level;
     private String difficulty;
     private Integer stageNumber;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<WordResponse> words;
 
     public static StageResponse from(Stage stage) {
         return StageResponse.builder()
                 .stageId(stage.getId())
-                .id(stage.getId())
                 .difficulty(stage.getDifficulty().toApiValue())
                 .stageNumber(stage.getStageNumber())
-                .title(stage.getTitle())
-                .description(stage.getDescription())
-                .level(stage.getLevel())
                 .createdAt(stage.getCreatedAt())
-                .updatedAt(stage.getCreatedAt())
                 .words(List.of())
                 .build();
     }
@@ -39,14 +29,9 @@ public class StageResponse {
     public static StageResponse from(Stage stage, List<WordResponse> words) {
         return StageResponse.builder()
                 .stageId(stage.getId())
-                .id(stage.getId())
                 .difficulty(stage.getDifficulty().toApiValue())
                 .stageNumber(stage.getStageNumber())
-                .title(stage.getTitle())
-                .description(stage.getDescription())
-                .level(stage.getLevel())
                 .createdAt(stage.getCreatedAt())
-                .updatedAt(stage.getCreatedAt())
                 .words(words)
                 .build();
     }

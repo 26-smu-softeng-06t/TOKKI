@@ -713,6 +713,7 @@ notes/
 # Local AI prompt/spec reference folders
 Prompts/
 Diagram&ERD&명세서/
+Onboarding/
 
 # Tracked AI agent entrypoints
 !AGENTS.md

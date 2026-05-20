@@ -1,5 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
 import com.tokki.dto.request.UpsertUserRequest;
 import com.tokki.dto.response.UserResponse;
 import com.tokki.security.AuthUser;
@@ -18,21 +20,21 @@ public class UserController {
     private final UserService userService;
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> upsertUser(
+    public ResponseEntity<ApiResponse<UserResponse>> upsertUser(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody UpsertUserRequest request) {
-        return ResponseEntity.ok(userService.upsertUser(authUser.getUid(), request));
+        return ResponseEntity.ok(ApiResponses.data(userService.upsertUser(authUser.getUid(), request)));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getMe(@AuthenticationPrincipal AuthUser authUser) {
-        return ResponseEntity.ok(userService.getUser(authUser.getUid()));
+    public ResponseEntity<ApiResponse<UserResponse>> getMe(@AuthenticationPrincipal AuthUser authUser) {
+        return ResponseEntity.ok(ApiResponses.data(userService.getUser(authUser.getUid())));
     }
 
     @GetMapping("/{uid}")
-    public ResponseEntity<UserResponse> getUser(
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @PathVariable String uid,
             @AuthenticationPrincipal AuthUser authUser) {
-        return ResponseEntity.ok(userService.getUser(uid, authUser.getUid(), authUser.getRole()));
+        return ResponseEntity.ok(ApiResponses.data(userService.getUser(uid, authUser.getUid(), authUser.getRole())));
     }
 }
