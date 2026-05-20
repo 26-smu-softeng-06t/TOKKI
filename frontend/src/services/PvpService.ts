@@ -6,11 +6,11 @@ export class PvpService {
     return (await http.get('/pvp/rooms')) as unknown as PvpRoom[];
   }
 
-  static async createRoom(stageId: string): Promise<PvpRoom> {
+  static async createRoom(stageId: number): Promise<PvpRoom> {
     return (await http.post('/pvp/rooms', { stageId })) as unknown as PvpRoom;
   }
 
-  static async joinRoom(roomId: string): Promise<PvpRoom> {
+  static async joinRoom(roomId: number): Promise<PvpRoom> {
     return (await http.post('/pvp/rooms/join', { roomId })) as unknown as PvpRoom;
   }
 
@@ -18,7 +18,7 @@ export class PvpService {
     return (await http.post('/pvp/results', result)) as unknown as PvpResult;
   }
 
-  static async completeRoom(roomId: string): Promise<PvpRoom> {
-    return (await http.post(`/pvp/rooms/${roomId}/complete`)) as unknown as PvpRoom;
+  static async completeRoom(roomId: number): Promise<PvpRoom> {
+    return (await http.patch(`/pvp/rooms/${roomId}/complete`)) as unknown as PvpRoom;
   }
 }

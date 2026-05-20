@@ -1,5 +1,7 @@
 package com.tokki.controller;
 
+import com.tokki.common.api.ApiResponse;
+import com.tokki.common.api.ApiResponses;
 import com.tokki.dto.request.BatchStageRequest;
 import com.tokki.dto.request.CreateStageRequest;
 import com.tokki.dto.response.ExcelUploadPreviewResponse;
@@ -25,32 +27,32 @@ public class StageController {
     private final ExcelStageUploadService excelStageUploadService;
 
     @GetMapping
-    public ResponseEntity<List<StageResponse>> getStages(
+    public ResponseEntity<ApiResponse<List<StageResponse>>> getStages(
             @RequestParam(required = false) String difficulty,
             @RequestParam(required = false) Integer stageNumber) {
-        return ResponseEntity.ok(stageService.getStages(difficulty, stageNumber));
+        return ResponseEntity.ok(ApiResponses.data(stageService.getStages(difficulty, stageNumber)));
     }
 
     @GetMapping("/{stageId}")
-    public ResponseEntity<StageResponse> getStage(@PathVariable Long stageId) {
-        return ResponseEntity.ok(stageService.getStage(stageId));
+    public ResponseEntity<ApiResponse<StageResponse>> getStage(@PathVariable Long stageId) {
+        return ResponseEntity.ok(ApiResponses.data(stageService.getStage(stageId)));
     }
 
     @GetMapping("/{stageId}/words")
-    public ResponseEntity<List<WordResponse>> getWords(@PathVariable Long stageId) {
-        return ResponseEntity.ok(stageService.getWordsByStage(stageId));
+    public ResponseEntity<ApiResponse<List<WordResponse>>> getWords(@PathVariable Long stageId) {
+        return ResponseEntity.ok(ApiResponses.data(stageService.getWordsByStage(stageId)));
     }
 
     @PostMapping
-    public ResponseEntity<StageResponse> createStage(@Valid @RequestBody CreateStageRequest request) {
-        return ResponseEntity.ok(stageService.createStage(request));
+    public ResponseEntity<ApiResponse<StageResponse>> createStage(@Valid @RequestBody CreateStageRequest request) {
+        return ResponseEntity.ok(ApiResponses.data(stageService.createStage(request)));
     }
 
     @PutMapping("/{stageId}")
-    public ResponseEntity<StageResponse> updateStage(
+    public ResponseEntity<ApiResponse<StageResponse>> updateStage(
             @PathVariable Long stageId,
             @Valid @RequestBody CreateStageRequest request) {
-        return ResponseEntity.ok(stageService.updateStage(stageId, request));
+        return ResponseEntity.ok(ApiResponses.data(stageService.updateStage(stageId, request)));
     }
 
     @DeleteMapping("/{stageId}")
@@ -60,12 +62,12 @@ public class StageController {
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<List<StageResponse>> batchUploadStages(@Valid @RequestBody BatchStageRequest request) {
-        return ResponseEntity.ok(stageService.batchUpsertStages(request));
+    public ResponseEntity<ApiResponse<List<StageResponse>>> batchUploadStages(@Valid @RequestBody BatchStageRequest request) {
+        return ResponseEntity.ok(ApiResponses.data(stageService.batchUpsertStages(request)));
     }
 
     @PostMapping(value = "/excel/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ExcelUploadPreviewResponse> previewExcelUpload(@RequestPart("file") MultipartFile file) {
-        return ResponseEntity.ok(excelStageUploadService.preview(file));
+    public ResponseEntity<ApiResponse<ExcelUploadPreviewResponse>> previewExcelUpload(@RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponses.data(excelStageUploadService.preview(file)));
     }
 }
