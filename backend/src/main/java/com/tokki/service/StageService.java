@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +30,7 @@ public class StageService {
 
     @Transactional(readOnly = true)
     public List<StageResponse> getAllStages() {
-        return stageRepository.findAll().stream()
-                .sorted(stageComparator())
-                .map(StageResponse::from)
-                .toList();
+        return toResponsesWithWords(stageRepository.findAll());
     }
 
     @Transactional(readOnly = true)
@@ -45,17 +44,26 @@ public class StageService {
         if (difficulty == null) {
             throw new AppException(ErrorCode.INVALID_INPUT);
         }
-        if (stageNumber == null) {
-            return stageRepository.findByDifficulty(difficulty).stream()
-                    .sorted(stageComparator())
-                    .map(StageResponse::from)
-                    .toList();
-        }
-        return stageRepository.findByDifficultyAndStageNumber(difficulty, stageNumber)
-                .map(List::of)
-                .orElse(List.of())
+        List<Stage> stages = stageNumber == null
+                ? stageRepository.findByDifficulty(difficulty)
+                : stageRepository.findByDifficultyAndStageNumber(difficulty, stageNumber)
+                        .map(List::of).orElse(List.of());
+        return toResponsesWithWords(stages);
+    }
+
+    private List<StageResponse> toResponsesWithWords(List<Stage> stages) {
+        if (stages.isEmpty()) return List.of();
+        List<Long> ids = stages.stream().map(Stage::getId).toList();
+        Map<Long, List<WordResponse>> wordsByStage = wordRepository
+                .findByStageIdInOrderByOrderIndexAscIdAsc(ids)
                 .stream()
-                .map(StageResponse::from)
+                .collect(Collectors.groupingBy(
+                        w -> w.getStage().getId(),
+                        Collectors.mapping(WordResponse::from, Collectors.toList())
+                ));
+        return stages.stream()
+                .sorted(stageComparator())
+                .map(s -> StageResponse.from(s, wordsByStage.getOrDefault(s.getId(), List.of())))
                 .toList();
     }
 
