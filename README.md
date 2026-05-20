@@ -69,7 +69,7 @@ Spring Boot React MySQL Gradle TypeScript Tailwind CSS Axios JavaScript
 - ✅ 모바일 반응형
 
 ### 기술 스택
-- **백엔드**: Spring Boot 3.x, Java 17, MySQL
+- **백엔드**: Spring Boot 3.x, Java 21, MySQL
 - **프론트엔드**: React 18, TypeScript, Tailwind CSS, Vite
 - **인증**: Firebase Authentication, JWT
 - **실시간**: WebSocket
