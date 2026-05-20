@@ -153,11 +153,11 @@ jobs:
       - name: Build frontend (Vite)
         run: |
           cd frontend
-          # Source TOKKI_ENV for VITE_ variables
+          # Export VITE_ variables from .env (avoid sourcing entire file due to PRIVATE_KEY newlines)
           if [ -f ../.env ]; then
-            set -o allexport
-            source ../.env
-            set +o allexport
+            grep -E '^VITE_' ../.env | while read -r line; do
+              export "$line"
+            done
           fi
           # Ensure API URL is relative for production
           export VITE_API_BASE_URL="${VITE_API_BASE_URL:-}"
