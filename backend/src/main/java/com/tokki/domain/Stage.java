@@ -36,13 +36,9 @@ public class Stage {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
         level = stageNumber;
         if (title == null || title.isBlank()) {
             title = defaultTitle(difficulty, stageNumber);
@@ -50,11 +46,6 @@ public class Stage {
         if (description == null || description.isBlank()) {
             description = defaultDescription(difficulty, stageNumber);
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public void update(DifficultyLevel difficulty, Integer stageNumber) {

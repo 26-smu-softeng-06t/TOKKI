@@ -14,7 +14,6 @@ public class StageResponse {
     private String difficulty;
     private Integer stageNumber;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<WordResponse> words;
 
     public static StageResponse from(Stage stage) {
@@ -23,7 +22,6 @@ public class StageResponse {
                 .difficulty(stage.getDifficulty().toApiValue())
                 .stageNumber(stage.getStageNumber())
                 .createdAt(stage.getCreatedAt())
-                .updatedAt(stage.getUpdatedAt())
                 .words(List.of())
                 .build();
     }
@@ -34,7 +32,6 @@ public class StageResponse {
                 .difficulty(stage.getDifficulty().toApiValue())
                 .stageNumber(stage.getStageNumber())
                 .createdAt(stage.getCreatedAt())
-                .updatedAt(stage.getUpdatedAt())
                 .words(words)
                 .build();
     }
