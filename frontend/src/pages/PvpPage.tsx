@@ -70,7 +70,7 @@ export default function PvpPage() {
 
   const joinRoomById = useCallback(async (id: string) => {
     try {
-      const joinedRoom = await PvpService.joinRoom(id);
+      const joinedRoom = await PvpService.joinRoom(Number(id));
       setRoom(joinedRoom);
       setPhase('waiting');
     } catch {
@@ -89,7 +89,7 @@ export default function PvpPage() {
     if (!selectedStage) return;
 
     try {
-      const newRoom = await PvpService.createRoom(String(selectedStage.stageId));
+      const newRoom = await PvpService.createRoom(selectedStage.stageId);
       setRoom(newRoom);
       setPhase('waiting');
     } catch {
