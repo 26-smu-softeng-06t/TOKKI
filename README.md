@@ -48,3 +48,31 @@ Spring Boot React MySQL Gradle TypeScript Tailwind CSS Axios JavaScript
 
 **안쪽 구조·기술 스택·화면 배치**는 앞으로도 계속 손볼 수 있어요.
 
+---
+
+## 버전 정보
+
+**현재 버전**: v1.0.0-rc.1 (2026-05-20)
+
+### 구현 완료 기능
+- ✅ SSO 로그인 (Google OAuth2)
+- ✅ 난이도 선택 (하/중/상, 10단계)
+- ✅ 단어 카드 학습
+- ✅ 주관식 퀴즈 (한→영, 영→한)
+- ✅ 퀴즈 결과 및 오답노트
+- ✅ 관리자 단어 CRUD
+- ✅ 퀴즈 이어풀기
+- ✅ 랭킹 조회
+- ✅ TTS/연관어/숙어
+- ✅ PvP 실시간 대결
+- ✅ 오프라인 임시 저장
+- ✅ 모바일 반응형
+
+### 기술 스택
+- **백엔드**: Spring Boot 3.x, Java 17, MySQL
+- **프론트엔드**: React 18, TypeScript, Tailwind CSS, Vite
+- **인증**: Firebase Authentication, JWT
+- **실시간**: WebSocket
+
+상세 변경 내용은 [CHANGELOG.md](CHANGELOG.md)를 확인하세요.
+

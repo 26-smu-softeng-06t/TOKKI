@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home, BookOpen, Trophy, Clock, History } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { usePvp } from '../hooks/usePvp';
 import { StageService } from '../services/StageService';
 import { ProgressService } from '../services/ProgressService';
 import {
@@ -51,8 +52,22 @@ const DIFFICULTY_BADGE: Record<string, string> = {
 
 export default function QuizPage() {
   const { stageId } = useParams<{ stageId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // PvP mode detection
+  const isPvP = searchParams.get('pvp') === 'true';
+  const pvpRoomId = searchParams.get('roomId');
+  const pvpSessionId = searchParams.get('sessionId');
+  const startTimeRef = useRef<number>(Date.now());
+
+  const { sendProgress, sendBattleComplete, disconnect: disconnectPvP } = usePvp({
+    roomId: pvpRoomId ? Number(pvpRoomId) : null,
+    onProgress: () => {}, // Opponent progress handled in parent
+    onBattleComplete: () => {}, // Battle completion handled in parent
+    onRoomState: () => {},
+  });
 
   const [phase, setPhase] = useState<QuizPhase>('loading');
   const [stage, setStage] = useState<Stage | null>(null);
@@ -214,8 +229,14 @@ export default function QuizPage() {
     setResults((prev) => [...prev, newResult]);
     setSubmitted(true);
 
-    // Auto-save draft after each answer
-    if (stage && user) {
+    // Send progress to opponent in PvP mode
+    if (isPvP && user) {
+      const score = [...results, newResult].filter(r => r.isCorrect).length;
+      sendProgress({ userId: user.uid, index: currentIndex + 1, score });
+    }
+
+    // Auto-save draft after each answer (only in non-PvP mode)
+    if (!isPvP && stage && user) {
       try {
         await QuizSessionService.upsertDraftSession({
           stageId: Number(stageId),
@@ -280,7 +301,42 @@ export default function QuizPage() {
   const saveProgress = async (finalResults: QuestionResult[]) => {
     if (!user || !stageId) return;
     const sId = Number(stageId);
+    const score = finalResults.filter((r) => r.isCorrect).length;
+    const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
+    // PvP mode: send battle complete message and navigate back to PvP page
+    if (isPvP && pvpRoomId && pvpSessionId) {
+      try {
+        await QuizSessionService.saveQuizResult({
+          stageId: sId,
+          score,
+          totalQuestions: finalResults.length,
+          answers: finalResults.map((r) => ({
+            wordId: r.word.wordId,
+            userAnswer: r.userAnswer,
+            correct: r.isCorrect,
+          })),
+        });
+
+        // Send battle complete via WebSocket
+        sendBattleComplete({
+          winnerId: user.uid, // Will be determined server-side
+          hostScore: score,
+          guestScore: 0, // Will be filled by opponent
+          hostTime: elapsedTime,
+          guestTime: 0, // Will be filled by opponent
+        });
+
+        disconnectPvP();
+        navigate(`/pvp/${pvpRoomId}`);
+      } catch (err) {
+        console.error('Failed to save PvP result:', err);
+        navigate(`/pvp/${pvpRoomId}`);
+      }
+      return;
+    }
+
+    // Normal mode: save progress as usual
     const newlyFailed = finalResults.filter((r) => !r.isCorrect);
     if (newlyFailed.length > 0) {
       setIncorrectWords((prev) => {
@@ -309,7 +365,7 @@ export default function QuizPage() {
     try {
       await QuizSessionService.saveQuizResult({
         stageId: sId,
-        score: finalResults.filter((r) => r.isCorrect).length,
+        score,
         totalQuestions: finalResults.length,
         answers: finalResults.map((r) => ({
           wordId: r.word.wordId,
