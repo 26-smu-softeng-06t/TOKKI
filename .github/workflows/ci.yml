@@ -37,9 +37,12 @@ jobs:
       - name: Ensure gradlew exists
         run: |
           if [ ! -f "backend/gradlew" ]; then
-            echo "gradlew not found, generating wrapper..."
+            echo "gradlew not found, generating wrapper in backend/..."
+            # Create temporary settings.gradle to make backend the root project
+            echo "rootProject.name = 'backend'" > backend/settings.gradle
             cd backend
             gradle wrapper --gradle-version=8.5
+            cd ..
           fi
           chmod +x backend/gradlew
 

@@ -81,6 +81,12 @@ export default function PvpPage() {
     }
   };
 
+  useEffect(() => {
+    if (roomId && !room) {
+      joinRoomById(roomId);
+    }
+  }, [roomId]);
+
   const joinByCode = () => {
     if (!joinCode.trim()) {
       toast.error('Please enter a room code');
