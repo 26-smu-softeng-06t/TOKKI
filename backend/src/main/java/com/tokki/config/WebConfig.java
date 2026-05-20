@@ -32,6 +32,7 @@ public class WebConfig implements WebMvcConfigurer {
         addOrigin(origins, frontendProperties.callbackUrl());
         origins.add("http://localhost:5173");
         origins.add("http://127.0.0.1:5173");
+        origins.add("https://tokki.lonerkim.me");
         return origins.toArray(String[]::new);
     }
 
