@@ -184,7 +184,7 @@ jobs:
           script: |
             test -s /opt/tokki/backend/app.jar
             ls -lh /opt/tokki/backend/app.jar
-            unzip -t /opt/tokki/backend/app.jar > /dev/null \
+            jar tf /opt/tokki/backend/app.jar > /dev/null \
               && echo "✅ JAR 유효" \
               || { echo "❌ JAR 파일이 손상되었습니다"; exit 1; }
 
@@ -256,6 +256,18 @@ jobs:
               pm2 logs tokki-backend --lines 120 --nostream || true
               exit 1
             fi
+
+      - name: Restore backend on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "=== 배포 실패 — 백엔드 복구 시도 ==="
+            pm2 restart tokki-backend || pm2 start java --name tokki-backend --time -- -jar /opt/tokki/backend/app.jar
+            pm2 status
 
       - name: Reload Nginx
         uses: appleboy/ssh-action@v1.0.3
