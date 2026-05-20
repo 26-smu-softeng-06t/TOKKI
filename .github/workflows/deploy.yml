@@ -11,9 +11,6 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -157,6 +154,16 @@ jobs:
       # ==========================================
       # 4. 서버로 파일 전송 (SCP)
       # ==========================================
+      - name: Stop backend before transfer
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            pm2 stop tokki-backend || true
+            mkdir -p /opt/tokki/backend/logs
+
       - name: Transfer backend JAR to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -175,10 +182,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # 로그 디렉토리 확인
-            mkdir -p /opt/tokki/backend/logs
             test -s /opt/tokki/backend/app.jar
             ls -lh /opt/tokki/backend/app.jar
+            jar tf /opt/tokki/backend/app.jar > /dev/null \
+              && echo "✅ JAR 유효" \
+              || { echo "❌ JAR 파일이 손상되었습니다"; exit 1; }
 
       - name: Transfer frontend dist to server
         uses: appleboy/scp-action@v0.1.7
@@ -248,6 +256,18 @@ jobs:
               pm2 logs tokki-backend --lines 120 --nostream || true
               exit 1
             fi
+
+      - name: Restore backend on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "=== 배포 실패 — 백엔드 복구 시도 ==="
+            pm2 restart tokki-backend || pm2 start java --name tokki-backend --time -- -jar /opt/tokki/backend/app.jar
+            pm2 status
 
       - name: Reload Nginx
         uses: appleboy/ssh-action@v1.0.3
