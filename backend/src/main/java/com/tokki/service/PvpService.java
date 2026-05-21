@@ -9,6 +9,16 @@ import com.tokki.dto.response.PvpRoomResponse;
 import com.tokki.exception.AppException;
 import com.tokki.exception.ErrorCode;
 import com.tokki.repository.*;
+import com.tokki.util.RoomCodeUtil;
+import lombok.RequiredArgsConstructor;
+import com.tokki.dto.request.CreateRoomRequest;
+import com.tokki.dto.request.JoinRoomRequest;
+import com.tokki.dto.request.SaveResultRequest;
+import com.tokki.dto.response.PvpResultResponse;
+import com.tokki.dto.response.PvpRoomResponse;
+import com.tokki.exception.AppException;
+import com.tokki.exception.ErrorCode;
+import com.tokki.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,11 +55,28 @@ public class PvpService {
     }
 
     @Transactional
+    public PvpRoomResponse joinRoomByCode(String uid, String roomCode) {
+        Long roomId = RoomCodeUtil.decode(roomCode);
+        if (roomId == null) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        JoinRoomRequest request = new JoinRoomRequest();
+        request.setRoomId(roomId);
+        return joinRoom(uid, request);
+    }
+
+    @Transactional
     public PvpRoomResponse joinRoom(String uid, JoinRoomRequest request) {
         User guest = userRepository.findById(uid)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         PvpRoom room = pvpRoomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+
+        // 호스트가 다시 참여하려는 경우 - 방 정보만 반환
+        if (room.getHostUser().getUid().equals(guest.getUid())) {
+            return PvpRoomResponse.from(room);
+        }
+
         if (!"WAITING".equals(room.getStatus())) {
             throw new AppException(ErrorCode.ROOM_FULL);
         }
@@ -93,5 +120,26 @@ public class PvpService {
         if (score > opponentScore) return "WIN";
         if (score < opponentScore) return "LOSE";
         return "DRAW";
+    }
+
+    @Transactional
+    public PvpRoomResponse startGame(String uid, Long roomId) {
+        User user = userRepository.findById(uid)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        PvpRoom room = pvpRoomRepository.findById(roomId)
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+
+        // Only host can start the game
+        if (!room.getHostUser().getUid().equals(user.getUid())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        // Check if guest has joined
+        if (room.getGuestUser() == null) {
+            throw new AppException(ErrorCode.ROOM_FULL);
+        }
+
+        room.startGame();
+        return PvpRoomResponse.from(pvpRoomRepository.save(room));
     }
 }

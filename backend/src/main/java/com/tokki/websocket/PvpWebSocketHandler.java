@@ -37,12 +37,24 @@ public class PvpWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.put(session.getId(), session);
-        log.info("WebSocket connected: {}", session.getId());
+        try {
+            sessions.put(session.getId(), session);
+            log.info("WebSocket connected: {}, URI: {}", session.getId(), session.getUri());
 
-        String roomId = getRoomId(session);
-        if (roomId != null) {
-            joinRoom(session, Long.parseLong(roomId));
+            String roomId = getRoomId(session);
+            if (roomId != null) {
+                try {
+                    joinRoom(session, Long.parseLong(roomId));
+                } catch (NumberFormatException e) {
+                    log.error("Invalid roomId format: {}", roomId, e);
+                    session.close();
+                }
+            } else {
+                log.warn("No roomId found in URI: {}", session.getUri());
+            }
+        } catch (Exception e) {
+            log.error("Error in afterConnectionEstablished", e);
+            throw e;
         }
     }
 

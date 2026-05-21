@@ -43,6 +43,10 @@ public class PvpRoom {
 
     public void joinGuest(User guest) {
         this.guestUser = guest;
+        // 상태는 게임이 실제로 시작될 때 변경
+    }
+
+    public void startGame() {
         this.status = "IN_PROGRESS";
     }
 

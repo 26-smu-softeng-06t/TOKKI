@@ -28,7 +28,7 @@ export default function App() {
             <Route path="/quiz/:stageId" element={<QuizPage />} />
             <Route path="/ranking" element={<RankingPage />} />
             <Route path="/pvp" element={<PvpPage />} />
-            <Route path="/pvp/:roomId" element={<PvpPage />} />
+            <Route path="/pvp/:roomCode" element={<PvpPage />} />
           </Route>
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPage />} />

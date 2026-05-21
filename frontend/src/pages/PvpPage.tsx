@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Sword, Users, Copy, Check, Trophy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
@@ -13,10 +13,11 @@ type GamePhase = 'mode-select' | 'create' | 'join' | 'waiting' | 'playing' | 're
 
 export default function PvpPage() {
   const { user } = useAuth();
-  const { roomId } = useParams();
+  const { roomCode } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [phase, setPhase] = useState<GamePhase>(roomId ? 'waiting' : 'mode-select');
+  const [phase, setPhase] = useState<GamePhase>('mode-select');
   const [stages, setStages] = useState<Stage[]>([]);
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [room, setRoom] = useState<PvpRoom | null>(null);
@@ -24,26 +25,58 @@ export default function PvpPage() {
   const [copied, setCopied] = useState(false);
   const [playerCount, setPlayerCount] = useState(1);
   const [battleResult, setBattleResult] = useState<BattleResultMessage | null>(null);
+  const [quizMode, setQuizMode] = useState<'EtoK' | 'KtoE'>('KtoE'); // 방장이 선택하는 모드
+  const [opponentProgress, setOpponentProgress] = useState(0); // 상대방 진행률
+  const hasJoinedRef = useRef(false);
 
   // Ref to store the latest startGame function
-  const startGameRef = useRef(() => {
+  const startGameRef = useRef(async () => {
     if (!room) return;
-    setPhase('playing');
-    navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}`);
+    // Only host starts the game via API
+    if (room.hostUid === user?.uid) {
+      try {
+        await PvpService.startGame(room.id);
+        setPhase('playing');
+        navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}&roomCode=${room.roomCode}&mode=${quizMode}`);
+      } catch (error) {
+        console.error('Failed to start game:', error);
+        toast.error('Failed to start game');
+      }
+    } else {
+      // Guest waits for host to start
+      setPhase('playing');
+      navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}&roomCode=${room.roomCode}&mode=${quizMode}`);
+    }
   });
 
   // Update ref when room changes
   useEffect(() => {
-    startGameRef.current = () => {
+    startGameRef.current = async () => {
       if (!room) return;
-      setPhase('playing');
-      navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}`);
+      // Only host starts the game via API
+      if (room.hostUid === user?.uid) {
+        try {
+          await PvpService.startGame(room.id);
+          setPhase('playing');
+          navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}&roomCode=${room.roomCode}&mode=${quizMode}`);
+        } catch (error) {
+          console.error('Failed to start game:', error);
+          toast.error('Failed to start game');
+        }
+      } else {
+        // Guest waits for host to start
+        setPhase('playing');
+        navigate(`/quiz/${room.stageId}?pvp=true&roomId=${room.id}&roomCode=${room.roomCode}&mode=${quizMode}`);
+      }
     };
-  }, [room, navigate]);
+  }, [room, navigate, quizMode, user?.uid]);
 
   const { connected, disconnect: disconnectWs } = usePvp({
     roomId: room?.id ?? null,
-    onProgress: () => {},
+    onProgress: (message) => {
+      // 상대방 진행률 업데이트
+      setOpponentProgress(message.index);
+    },
     onBattleComplete: (message) => {
       setBattleResult(message);
       setPhase('result');
@@ -53,6 +86,14 @@ export default function PvpPage() {
       if (count === 2 && phase === 'waiting') {
         startGameRef.current();
       }
+    },
+    onError: (error) => {
+      console.error('PvP WebSocket error:', error);
+      toast.error('실시간 연결에 실패했습니다. 다시 시도해주세요.');
+      // 연결 실패 시 메인 페이지로 이동
+      setTimeout(() => {
+        navigate('/pvp');
+      }, 2000);
     },
   });
 
@@ -68,31 +109,63 @@ export default function PvpPage() {
     loadStages();
   }, []);
 
-  const joinRoomById = useCallback(async (id: string) => {
+  const joinRoomByCode = useCallback(async (code: string) => {
+    // 이미 같은 방에 있는 경우 다시 참여하지 않음
+    if (room && room.roomCode === code) {
+      console.log('Already in room:', code, 'as host or guest');
+      return;
+    }
+
     try {
-      const joinedRoom = await PvpService.joinRoom(Number(id));
+      console.log('Joining room with code:', code);
+      const joinedRoom = await PvpService.joinRoom(code);
+      console.log('Joined room:', joinedRoom);
       setRoom(joinedRoom);
       setPhase('waiting');
-    } catch {
+    } catch (error) {
+      console.error('Failed to join room:', error);
       toast.error('Failed to join room');
       navigate('/pvp');
     }
-  }, [navigate]);
+  }, [navigate, room]);
 
+  // roomCode가 변경될 때만 방 참여 시도 (중복 방지)
   useEffect(() => {
-    if (roomId && !room) {
-      joinRoomById(roomId);
+    console.log('PvpPage render - roomCode:', roomCode, 'room:', room, 'phase:', phase);
+    if (roomCode && !room && !hasJoinedRef.current) {
+      console.log('Triggering joinRoomByCode with:', roomCode);
+      hasJoinedRef.current = true;
+      joinRoomByCode(roomCode);
+    } else if (!roomCode) {
+      // roomCode가 없으면 ref 리셋
+      hasJoinedRef.current = false;
     }
-  }, [roomId, room, joinRoomById]);
+  }, [roomCode, room, joinRoomByCode]);
+
+  // roomCode URL 파라미터가 있으면 초기 phase를 waiting으로 설정
+  useEffect(() => {
+    if (roomCode && phase === 'mode-select') {
+      setPhase('waiting');
+    } else if (!roomCode) {
+      hasJoinedRef.current = false;
+    }
+  }, [roomCode, phase]);
 
   const createRoom = async () => {
     if (!selectedStage) return;
 
     try {
+      console.log('Creating room with stageId:', selectedStage.stageId);
       const newRoom = await PvpService.createRoom(selectedStage.stageId);
+      console.log('Room created:', newRoom);
+      // 먼저 room을 설정해서 useEffect가 중복 참여를 방지
+      hasJoinedRef.current = true;
       setRoom(newRoom);
       setPhase('waiting');
-    } catch {
+      // 그 다음 URL만 변경
+      navigate(`/pvp/${newRoom.roomCode}`);
+    } catch (error) {
+      console.error('Create room error:', error);
       toast.error('Failed to create room');
     }
   };
@@ -102,12 +175,17 @@ export default function PvpPage() {
       toast.error('Please enter a room code');
       return;
     }
+    if (joinCode.length !== 6) {
+      toast.error('Room code must be 6 characters');
+      return;
+    }
+    console.log('Navigating to room:', joinCode);
     navigate(`/pvp/${joinCode}`);
   };
 
   const copyInviteCode = () => {
     if (!room) return;
-    navigator.clipboard.writeText(String(room.id));
+    navigator.clipboard.writeText(room.roomCode);
     setCopied(true);
     toast.success('Invite code copied!');
     setTimeout(() => setCopied(false), 2000);
@@ -115,7 +193,7 @@ export default function PvpPage() {
 
   const handleExit = () => {
     disconnectWs();
-    navigate('/select');
+    navigate('/');
   };
 
   if (!user) {
@@ -222,10 +300,10 @@ export default function PvpPage() {
             <input
               type="text"
               value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              placeholder="Enter 4-digit code"
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="Enter 6-character code"
               className="w-full p-4 text-2xl text-center font-mono tracking-widest border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none"
-              maxLength={4}
+              maxLength={6}
             />
             <div className="flex gap-3 mt-6">
               <button
@@ -247,30 +325,84 @@ export default function PvpPage() {
         {/* Waiting Room */}
         {phase === 'waiting' && room && (
           <div className="bg-white p-8 rounded-2xl shadow-md text-center">
-            <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-5">
               <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center">
                 <Users className="w-10 h-10 text-indigo-600" />
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-slate-800">Waiting for Opponent</h2>
-                <p className="text-slate-500 mt-1">Share this code with a friend</p>
+                <h2 className="text-2xl font-bold text-slate-800">
+                  {playerCount === 2 ? '게임 준비 완료!' : '상대방을 기다리는 중...'}
+                </h2>
+                <p className="text-slate-500 mt-1">
+                  {playerCount === 2 ? '곧 게임이 시작됩니다' : '코드를 공유하세요'}
+                </p>
               </div>
 
-              <div className="bg-slate-100 px-8 py-4 rounded-xl flex items-center gap-4">
-                <span className="text-4xl font-mono font-bold text-indigo-600">{room.id}</span>
-                <button
-                  onClick={copyInviteCode}
-                  className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
-                >
-                  {copied ? <Check className="w-6 h-6 text-green-500" /> : <Copy className="w-6 h-6 text-slate-500" />}
-                </button>
-              </div>
+              {/* 방 코드 (방장만 표시) */}
+              {room.hostUid === user?.uid && (
+                <div className="bg-slate-100 px-8 py-4 rounded-xl flex items-center gap-4">
+                  <span className="text-4xl font-mono font-bold text-indigo-600">{room.roomCode}</span>
+                  <button
+                    onClick={copyInviteCode}
+                    className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
+                  >
+                    {copied ? <Check className="w-6 h-6 text-green-500" /> : <Copy className="w-6 h-6 text-slate-500" />}
+                  </button>
+                </div>
+              )}
+
+              {/* 모드 선택 (방장만, 게임 시작 전) */}
+              {room.hostUid === user?.uid && playerCount < 2 && (
+                <div className="w-full">
+                  <p className="text-sm text-slate-600 mb-2">퀴즈 모드 선택</p>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={() => setQuizMode('KtoE')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        quizMode === 'KtoE'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      한➡️영
+                    </button>
+                    <button
+                      onClick={() => setQuizMode('EtoK')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        quizMode === 'EtoK'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      영➡️한
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 상대방 진행률 (게임 중) */}
+              {playerCount === 2 && phase !== 'playing' && phase !== 'result' && (
+                <div className="w-full bg-slate-50 p-4 rounded-lg">
+                  <p className="text-sm text-slate-600 mb-2">상대방 진행률</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500 transition-all duration-300"
+                        style={{ width: `${(opponentProgress / (room?.stageId ? 10 : 10)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 w-12 text-right">
+                      {opponentProgress}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-4">
                 <div className={`w-4 h-4 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
                 <span className="text-sm text-slate-600">
-                  {connected ? 'Connected' : 'Connecting...'} ({playerCount}/2 players)
+                  {connected ? '연결됨' : '연결 중...'} ({playerCount}/2 명)
                 </span>
               </div>
 

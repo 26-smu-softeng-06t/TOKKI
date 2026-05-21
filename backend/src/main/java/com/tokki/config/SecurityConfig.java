@@ -41,8 +41,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DevAuthenticationFilter devAuthenticationFilter() {
-        return new DevAuthenticationFilter();
+    public DevAuthenticationFilter devAuthenticationFilter(UserRepository userRepository) {
+        return new DevAuthenticationFilter(userRepository);
     }
 
     @Bean

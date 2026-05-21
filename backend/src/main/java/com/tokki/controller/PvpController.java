@@ -13,7 +13,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -41,6 +43,20 @@ public class PvpController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody JoinRoomRequest request) {
         return ResponseEntity.ok(ApiResponses.data(pvpService.joinRoom(authUser.getUid(), request)));
+    }
+
+    @PostMapping("/rooms/join/{roomCode}")
+    public ResponseEntity<ApiResponse<PvpRoomResponse>> joinRoomByCode(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable String roomCode) {
+        return ResponseEntity.ok(ApiResponses.data(pvpService.joinRoomByCode(authUser.getUid(), roomCode)));
+    }
+
+    @PostMapping("/rooms/{roomId}/start")
+    public ResponseEntity<ApiResponse<PvpRoomResponse>> startGame(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long roomId) {
+        return ResponseEntity.ok(ApiResponses.data(pvpService.startGame(authUser.getUid(), roomId)));
     }
 
     @PostMapping("/results")

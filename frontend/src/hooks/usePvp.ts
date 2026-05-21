@@ -6,15 +6,17 @@ interface UsePvpOptions {
   onProgress?: (message: ProgressMessage) => void;
   onBattleComplete?: (message: BattleResultMessage) => void;
   onRoomState?: (playerCount: number) => void;
+  onError?: (error: Error) => void;
 }
 
 interface HandlersRef {
   onProgress?: (message: ProgressMessage) => void;
   onBattleComplete?: (message: BattleResultMessage) => void;
   onRoomState?: (playerCount: number) => void;
+  onError?: (error: Error) => void;
 }
 
-export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: UsePvpOptions) {
+export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState, onError }: UsePvpOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -22,10 +24,42 @@ export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: Us
 
   // Keep handlers ref up-to-date
   useEffect(() => {
-    handlersRef.current = { onProgress, onBattleComplete, onRoomState };
-  }, [onProgress, onBattleComplete, onRoomState]);
+    handlersRef.current = { onProgress, onBattleComplete, onRoomState, onError };
+  }, [onProgress, onBattleComplete, onRoomState, onError]);
 
-  const connect = useCallback(() => {
+  const disconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setConnected(false);
+  }, []);
+
+  const sendProgress = useCallback((progress: ProgressMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'PROGRESS',
+        roomId,
+        ...progress,
+      }));
+    }
+  }, [roomId]);
+
+  const sendBattleComplete = useCallback((result: BattleResultMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'BATTLE_COMPLETE',
+        roomId,
+        ...result,
+      }));
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    // Only connect when roomId is available
     if (!roomId) return;
 
     const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080'}/ws/pvp?roomId=${roomId}`;
@@ -62,46 +96,23 @@ export function usePvp({ roomId, onProgress, onBattleComplete, onRoomState }: Us
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
+      handlersRef.current.onError?.(new Error('WebSocket connection failed'));
     };
 
     wsRef.current = ws;
-  }, [roomId]);
 
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    setConnected(false);
-  }, []);
-
-  const sendProgress = useCallback((progress: ProgressMessage) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'PROGRESS',
-        roomId,
-        ...progress,
-      }));
-    }
-  }, [roomId]);
-
-  const sendBattleComplete = useCallback((result: BattleResultMessage) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'BATTLE_COMPLETE',
-        roomId,
-        ...result,
-      }));
-    }
-  }, [roomId]);
-
-  useEffect(() => {
-    connect();
-    return () => disconnect();
-  }, [connect, disconnect]);
+    // Cleanup function
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      setConnected(false);
+    };
+  }, [roomId]); // Only depend on roomId
 
   return {
     connected,

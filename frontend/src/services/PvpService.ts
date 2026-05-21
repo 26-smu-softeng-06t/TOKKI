@@ -10,8 +10,12 @@ export class PvpService {
     return (await http.post('/pvp/rooms', { stageId })) as unknown as PvpRoom;
   }
 
-  static async joinRoom(roomId: number): Promise<PvpRoom> {
-    return (await http.post('/pvp/rooms/join', { roomId })) as unknown as PvpRoom;
+  static async joinRoom(roomCode: string): Promise<PvpRoom> {
+    return (await http.post(`/pvp/rooms/join/${roomCode}`)) as unknown as PvpRoom;
+  }
+
+  static async startGame(roomId: number): Promise<PvpRoom> {
+    return (await http.post(`/pvp/rooms/${roomId}/start`)) as unknown as PvpRoom;
   }
 
   static async saveResult(result: Omit<PvpResult, 'resultId'>): Promise<PvpResult> {
