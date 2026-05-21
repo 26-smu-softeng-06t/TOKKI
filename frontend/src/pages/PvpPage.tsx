@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sword, Users, Copy, Check, Trophy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
@@ -15,7 +15,6 @@ export default function PvpPage() {
   const { user } = useAuth();
   const { roomCode } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [phase, setPhase] = useState<GamePhase>('mode-select');
   const [stages, setStages] = useState<Stage[]>([]);
@@ -382,7 +381,7 @@ export default function PvpPage() {
               )}
 
               {/* 상대방 진행률 (게임 중) */}
-              {playerCount === 2 && phase !== 'playing' && phase !== 'result' && (
+              {playerCount === 2 && (
                 <div className="w-full bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-slate-600 mb-2">상대방 진행률</p>
                   <div className="flex items-center gap-2">
