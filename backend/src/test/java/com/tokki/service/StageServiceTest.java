@@ -52,14 +52,25 @@ class StageServiceTest {
     }
 
     @Test
-    void acceptsDifficultyAliasesForIssueWordingAndFrontend() {
+    void acceptsCanonicalDifficultyValues() {
         when(stageRepository.findByDifficulty(DifficultyLevel.easy)).thenReturn(List.of());
         when(stageRepository.findByDifficulty(DifficultyLevel.hard)).thenReturn(List.of());
 
-        assertThat(stageService.getStages("low", null)).isEmpty();
         assertThat(stageService.getStages("easy", null)).isEmpty();
-        assertThat(stageService.getStages("high", null)).isEmpty();
         assertThat(stageService.getStages("hard", null)).isEmpty();
+    }
+
+    @Test
+    void rejectsDeprecatedDifficultyAliases() {
+        assertThatThrownBy(() -> stageService.getStages("low", null))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("잘못된 입력값");
+        assertThatThrownBy(() -> stageService.getStages("high", null))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("잘못된 입력값");
+        assertThatThrownBy(() -> stageService.getStages("middle", null))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("잘못된 입력값");
     }
 
     @Test
@@ -71,7 +82,7 @@ class StageServiceTest {
 
     @Test
     void rejectsOutOfRangeStageNumber() {
-        assertThatThrownBy(() -> stageService.getStages("low", 11))
+        assertThatThrownBy(() -> stageService.getStages("easy", 11))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("잘못된 입력값");
     }

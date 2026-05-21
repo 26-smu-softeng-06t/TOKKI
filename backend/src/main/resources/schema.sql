@@ -76,11 +76,13 @@ CREATE TABLE IF NOT EXISTS word_relations (
 CREATE TABLE IF NOT EXISTS quiz_sessions (
     score           INT NOT NULL,
     total_questions INT NOT NULL,
+    current_index   INT NOT NULL DEFAULT 0,
     completed_at    DATETIME(6) DEFAULT NULL,
     id              BIGINT NOT NULL AUTO_INCREMENT,
     stage_id        BIGINT NOT NULL,
     started_at      DATETIME(6) NOT NULL,
     uid             VARCHAR(128) NOT NULL,
+    mode            VARCHAR(10) DEFAULT NULL,
     PRIMARY KEY (id),
     KEY fk_quiz_sessions_stage (stage_id),
     KEY fk_quiz_sessions_user (uid),
@@ -103,14 +105,17 @@ CREATE TABLE IF NOT EXISTS quiz_answers (
 );
 
 CREATE TABLE IF NOT EXISTS rankings (
-    rank_position INT NOT NULL,
-    score         INT NOT NULL,
     id            BIGINT NOT NULL AUTO_INCREMENT,
+    word_id       BIGINT NOT NULL,
+    miss_count    INT NOT NULL,
+    rank_position INT NOT NULL,
     period        VARCHAR(20) NOT NULL,
-    uid           VARCHAR(128) NOT NULL,
+    snapshot_date DATE NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_rankings_user_period (uid, period),
-    CONSTRAINT fk_rankings_user FOREIGN KEY (uid) REFERENCES users (uid)
+    UNIQUE KEY uq_rankings_word_period (word_id, period),
+    KEY fk_rankings_word (word_id),
+    KEY idx_rankings_period (period),
+    CONSTRAINT fk_rankings_word FOREIGN KEY (word_id) REFERENCES words (id)
 );
 
 CREATE TABLE IF NOT EXISTS pvp_rooms (

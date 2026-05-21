@@ -13,9 +13,9 @@ public enum DifficultyLevel {
         }
         String normalized = value.trim().toLowerCase();
         return switch (normalized) {
-            case "easy", "low" -> easy;
-            case "medium", "middle" -> medium;
-            case "hard", "high" -> hard;
+            case "easy" -> easy;
+            case "medium" -> medium;
+            case "hard" -> hard;
             default -> throw new IllegalArgumentException("Unsupported difficulty: " + value);
         };
     }
