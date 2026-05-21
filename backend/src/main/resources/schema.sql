@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS rankings (
     PRIMARY KEY (id),
     UNIQUE KEY uq_rankings_word_period (word_id, period),
     KEY fk_rankings_word (word_id),
+    KEY idx_rankings_period (period),
     CONSTRAINT fk_rankings_word FOREIGN KEY (word_id) REFERENCES words (id)
 );
 
