@@ -64,7 +64,7 @@ export default function QuizPage() {
   const pvpMode = searchParams.get('mode') as 'EtoK' | 'KtoE' | null;
   const startTimeRef = useRef<number>(Date.now());
 
-  const { sendProgress, sendBattleComplete, disconnect: disconnectPvP, connected } = usePvp({
+  const { sendProgress, sendBattleComplete, disconnect: disconnectPvP } = usePvp({
     roomId: pvpRoomId ? Number(pvpRoomId) : null,
     onProgress: (message) => {
       // 상대방 진행률 업데이트
@@ -175,14 +175,14 @@ export default function QuizPage() {
 
   // PvP 모드에서 진행률 실시간 전송 (words 정의 후)
   useEffect(() => {
-    if (isPvP && phase === 'quiz') {
+    if (isPvP && phase === 'quiz' && user) {
       sendProgress({
         userId: user.uid,
         index: currentIndex,
         score: results.filter(r => r.isCorrect).length,
       });
     }
-  }, [isPvP, phase, currentIndex, results, user.uid, sendProgress]);
+  }, [isPvP, phase, currentIndex, results, user, sendProgress]);
 
   const getPrompt = (word: Word) => (mode === 'KtoE' ? word.meaning : word.word);
   const getCorrect = (word: Word) => (mode === 'KtoE' ? word.word : word.meaning);
