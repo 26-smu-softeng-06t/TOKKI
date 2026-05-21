@@ -1,6 +1,7 @@
 package com.tokki.dto.response;
 
 import com.tokki.domain.PvpRoom;
+import com.tokki.util.RoomCodeUtil;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class PvpRoomResponse {
     private Long id;
+    private String roomCode;
     private String hostUid;
     private String guestUid;
     private String status;
@@ -19,6 +21,7 @@ public class PvpRoomResponse {
     public static PvpRoomResponse from(PvpRoom room) {
         return PvpRoomResponse.builder()
                 .id(room.getId())
+                .roomCode(RoomCodeUtil.encode(room.getId()))
                 .hostUid(room.getHostUser().getUid())
                 .guestUid(room.getGuestUser() != null ? room.getGuestUser().getUid() : null)
                 .status(room.getStatus())

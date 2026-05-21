@@ -122,6 +122,7 @@ export interface Ranking {
 
 export interface PvpRoom {
   id: number;
+  roomCode: string;
   hostUid: string;
   guestUid: string | null;
   stageId: number;

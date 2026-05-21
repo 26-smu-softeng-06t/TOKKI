@@ -42,8 +42,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DevAuthenticationFilter devAuthenticationFilter() {
-        return new DevAuthenticationFilter();
+    public DevAuthenticationFilter devAuthenticationFilter(UserRepository userRepository) {
+        return new DevAuthenticationFilter(userRepository);
     }
 
     /**
@@ -105,9 +105,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(devAuthenticationFilter, JwtAuthenticationFilter.class)
-                .addFilterAfter(firebaseTokenFilter, JwtAuthenticationFilter.class)
+                // FirebaseTokenFilter first (handles Firebase ID tokens with RS256)
+                .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                // JwtAuthenticationFilter second (handles custom JWT tokens with HMAC)
+                .addFilterAfter(jwtAuthenticationFilter, FirebaseTokenFilter.class)
+                // DevAuthenticationFilter last (for local development)
+                .addFilterAfter(devAuthenticationFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 }

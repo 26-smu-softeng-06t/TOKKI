@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ArrowLeft, ArrowRight, RotateCcw, Home, BookOpen, Trophy, Clock, History } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
+import { usePvp } from '../hooks/usePvp';
 import { StageService } from '../services/StageService';
 import { ProgressService } from '../services/ProgressService';
 import {
@@ -51,8 +53,34 @@ const DIFFICULTY_BADGE: Record<string, string> = {
 
 export default function QuizPage() {
   const { stageId } = useParams<{ stageId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // PvP mode detection
+  const isPvP = searchParams.get('pvp') === 'true';
+  const pvpRoomId = searchParams.get('roomId');
+  const pvpRoomCode = searchParams.get('roomCode');
+  const pvpMode = searchParams.get('mode') as 'EtoK' | 'KtoE' | null;
+  const startTimeRef = useRef<number>(Date.now());
+
+  const { sendProgress, sendBattleComplete, disconnect: disconnectPvP, connected } = usePvp({
+    roomId: pvpRoomId ? Number(pvpRoomId) : null,
+    onProgress: (message) => {
+      // 상대방 진행률 업데이트
+      setOpponentProgress(message.index);
+    },
+    onBattleComplete: () => {}, // Battle completion handled in parent
+    onRoomState: () => {},
+    onError: (error) => {
+      console.error('PvP connection error in quiz:', error);
+      // PvP 연결 실패 시 알림 후 PvP 페이지로 이동
+      toast.error('PvP 연결이 끊어졌습니다. PvP 페이지로 이동합니다.');
+      setTimeout(() => {
+        navigate('/pvp');
+      }, 1500);
+    },
+  });
 
   const [phase, setPhase] = useState<QuizPhase>('loading');
   const [stage, setStage] = useState<Stage | null>(null);
@@ -61,8 +89,9 @@ export default function QuizPage() {
   const [showResolveDialog, setShowResolveDialog] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const [mode, setMode] = useState<QuizMode>('KtoE');
+  const [mode, setMode] = useState<QuizMode>((pvpMode as QuizMode) || 'KtoE');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [opponentProgress, setOpponentProgress] = useState(0); // 상대방 진행률
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<QuestionResult[]>([]);
@@ -108,7 +137,8 @@ export default function QuizPage() {
 
         if (stageIw.length > 0) {
           setPhase('incorrect-note');
-        } else if (stageDraft) {
+        } else if (stageDraft && !isPvP) {
+          // PvP 모드에서는 이어하기 비활성화
           setPhase('resume-select');
         } else {
           setPhase('mode-select');
@@ -142,6 +172,17 @@ export default function QuizPage() {
   }, [phase, currentIndex, submitted]);
 
   const words = (stage?.words ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
+
+  // PvP 모드에서 진행률 실시간 전송 (words 정의 후)
+  useEffect(() => {
+    if (isPvP && phase === 'quiz') {
+      sendProgress({
+        userId: user.uid,
+        index: currentIndex,
+        score: results.filter(r => r.isCorrect).length,
+      });
+    }
+  }, [isPvP, phase, currentIndex, results, user.uid, sendProgress]);
 
   const getPrompt = (word: Word) => (mode === 'KtoE' ? word.meaning : word.word);
   const getCorrect = (word: Word) => (mode === 'KtoE' ? word.word : word.meaning);
@@ -214,8 +255,14 @@ export default function QuizPage() {
     setResults((prev) => [...prev, newResult]);
     setSubmitted(true);
 
-    // Auto-save draft after each answer
-    if (stage && user) {
+    // Send progress to opponent in PvP mode
+    if (isPvP && user) {
+      const score = [...results, newResult].filter(r => r.isCorrect).length;
+      sendProgress({ userId: user.uid, index: currentIndex + 1, score });
+    }
+
+    // Auto-save draft after each answer (only in non-PvP mode)
+    if (!isPvP && stage && user) {
       try {
         await QuizSessionService.upsertDraftSession({
           stageId: Number(stageId),
@@ -280,7 +327,42 @@ export default function QuizPage() {
   const saveProgress = async (finalResults: QuestionResult[]) => {
     if (!user || !stageId) return;
     const sId = Number(stageId);
+    const score = finalResults.filter((r) => r.isCorrect).length;
+    const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
+    // PvP mode: send battle complete message and navigate back to PvP page
+    if (isPvP && pvpRoomId) {
+      try {
+        await QuizSessionService.saveQuizResult({
+          stageId: sId,
+          score,
+          totalQuestions: finalResults.length,
+          answers: finalResults.map((r) => ({
+            wordId: r.word.wordId,
+            userAnswer: r.userAnswer,
+            correct: r.isCorrect,
+          })),
+        });
+
+        // Send battle complete via WebSocket (winner determined server-side)
+        sendBattleComplete({
+          winnerId: user.uid,
+          hostScore: score,
+          guestScore: 0,
+          hostTime: elapsedTime,
+          guestTime: 0,
+        });
+
+        disconnectPvP();
+        navigate(`/pvp/${pvpRoomCode}`);
+      } catch (err) {
+        console.error('Failed to save PvP result:', err);
+        navigate(`/pvp/${pvpRoomCode}`);
+      }
+      return;
+    }
+
+    // Normal mode: save progress as usual
     const newlyFailed = finalResults.filter((r) => !r.isCorrect);
     if (newlyFailed.length > 0) {
       setIncorrectWords((prev) => {
@@ -309,7 +391,7 @@ export default function QuizPage() {
     try {
       await QuizSessionService.saveQuizResult({
         stageId: sId,
-        score: finalResults.filter((r) => r.isCorrect).length,
+        score,
         totalQuestions: finalResults.length,
         answers: finalResults.map((r) => ({
           wordId: r.word.wordId,
@@ -365,7 +447,8 @@ export default function QuizPage() {
     setSubmitted(false);
     if (incorrectWords.length > 0) {
       setPhase('incorrect-note');
-    } else if (draftSession) {
+    } else if (draftSession && !isPvP) {
+      // PvP 모드에서는 이어하기 비활성화
       setPhase('resume-select');
     } else {
       setPhase('mode-select');
@@ -377,7 +460,8 @@ export default function QuizPage() {
     setResults([]);
     setAnswer('');
     setSubmitted(false);
-    if (draftSession) {
+    if (draftSession && !isPvP) {
+      // PvP 모드에서는 이어하기 비활성화
       setPhase('resume-select');
     } else {
       setPhase('mode-select');
@@ -831,13 +915,21 @@ export default function QuizPage() {
             aria-valuemin={0}
             aria-valuemax={words.length}
             aria-label={`퀴즈 진행률: ${progressValue}/${words.length}`}
-            className="h-1.5 bg-slate-100 rounded-full mb-6 overflow-hidden"
+            className="h-1.5 bg-slate-100 rounded-full mb-4 overflow-hidden"
           >
             <div
               className="h-full bg-indigo-600 rounded-full transition-all duration-300"
               style={{ width: `${(progressValue / words.length) * 100}%` }}
             />
           </div>
+
+          {/* 상대방 진행률 (PvP만) */}
+          {isPvP && (
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-4 px-1">
+              <span>나: {currentIndex + 1}문제</span>
+              <span>상대: {opponentProgress + 1}문제</span>
+            </div>
+          )}
 
           {/* Prompt */}
           <div className="mb-6">

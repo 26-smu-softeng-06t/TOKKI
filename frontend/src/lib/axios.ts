@@ -66,6 +66,10 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response.data?.data ?? response.data,
   (error) => {
+    console.error('API Error:', error);
+    console.error('Response:', error.response);
+    console.error('Config:', error.config);
+
     const status = error.response?.status;
     const errorCode = error.response?.data?.error?.code;
 

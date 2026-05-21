@@ -33,6 +33,18 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-write-only: false
+          gradle-version: 8.5
+
+      - name: Verify gradlew
+        run: |
+          cd backend
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "⚠️ gradle-wrapper.jar missing, generating..."
+            gradle wrapper --gradle-version=8.5
+          fi
+          chmod +x gradlew
 
       - name: Restore production environment
         env:
@@ -55,6 +67,7 @@ jobs:
             SPRING_DATASOURCE_URL
             JWT_SECRET
             ADMIN_SECRET_KEY
+            VITE_API_BASE_URL
             VITE_FIREBASE_API_KEY
             VITE_FIREBASE_AUTH_DOMAIN
             VITE_FIREBASE_PROJECT_ID
@@ -103,13 +116,8 @@ jobs:
       - name: Build backend (Gradle)
         run: |
           cd backend
-          if [ -f "./gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew clean build -x test --no-daemon
-          else
-            echo "gradlew not found. Using system gradle."
-            gradle clean build -x test --no-daemon
-          fi
+          chmod +x gradlew
+          ./gradlew clean build -x test --no-daemon
 
       - name: Verify backend JAR
         run: |
@@ -145,6 +153,14 @@ jobs:
       - name: Build frontend (Vite)
         run: |
           cd frontend
+          # Export VITE_ variables from .env (avoid sourcing entire file due to PRIVATE_KEY newlines)
+          if [ -f ../.env ]; then
+            grep -E '^VITE_' ../.env | while read -r line; do
+              export "$line"
+            done
+          fi
+          # Ensure API URL is relative for production
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-}"
           npm run build
 
       - name: Verify frontend dist
@@ -198,6 +214,16 @@ jobs:
           target: "/opt/tokki/frontend/dist/"
           strip_components: 2
           overwrite: true
+
+      - name: Fix frontend file permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            chmod -R 755 /opt/tokki/frontend/dist/
+            echo "Frontend permissions fixed"
 
       - name: Transfer production environment to server
         uses: appleboy/scp-action@v0.1.7
