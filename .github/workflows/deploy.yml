@@ -1,0 +1,356 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+# 동시 배포 방지
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ==========================================
+      # 1. 소스 코드 체크아웃
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # 2. 백엔드 빌드 (Spring Boot + Gradle)
+      # ==========================================
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-write-only: false
+          gradle-version: 8.5
+
+      - name: Verify gradlew
+        run: |
+          cd backend
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "⚠️ gradle-wrapper.jar missing, generating..."
+            gradle wrapper --gradle-version=8.5
+          fi
+          chmod +x gradlew
+
+      - name: Restore production environment
+        env:
+          TOKKI_ENV: ${{ secrets.TOKKI_ENV }}
+        run: |
+          if [ -z "$TOKKI_ENV" ]; then
+            echo "Missing required GitHub secret: TOKKI_ENV"
+            exit 1
+          fi
+          printf '%s\n' "$TOKKI_ENV" > .env
+          test -s .env
+
+          missing=0
+          required_keys=(
+            MYSQL_HOST
+            MYSQL_PORT
+            MYSQL_DATABASE
+            MYSQL_USERNAME
+            MYSQL_PASSWORD
+            SPRING_DATASOURCE_URL
+            JWT_SECRET
+            ADMIN_SECRET_KEY
+            VITE_API_BASE_URL
+            VITE_FIREBASE_API_KEY
+            VITE_FIREBASE_AUTH_DOMAIN
+            VITE_FIREBASE_PROJECT_ID
+            FIREBASE_PROJECT_ID
+            FIREBASE_CLIENT_EMAIL
+            FIREBASE_PRIVATE_KEY
+          )
+
+          for key in "${required_keys[@]}"; do
+            if ! grep -q "^${key}=" .env; then
+              echo "Missing required key in TOKKI_ENV: ${key}"
+              missing=1
+            fi
+          done
+
+          forbidden_keys=(
+            HOST
+            USERNAME
+            SSH_KEY
+            VPS_PASSWORD
+            VPS_PRIVATE_IP
+            VPS_PUB_IP
+            VPS_USER
+            DESIRED_PATH_URL
+            NAMECHEAP_URL
+            FIREBASE_SERVICE_ACCOUNT
+          )
+
+          for key in "${forbidden_keys[@]}"; do
+            if grep -q "^${key}=" .env; then
+              echo "Remove deployment-only key from TOKKI_ENV: ${key}"
+              missing=1
+            fi
+          done
+
+          if grep -q "^FIREBASE_SERVICE_ACCOUNT_PATH=." .env; then
+            echo "Do not use FIREBASE_SERVICE_ACCOUNT_PATH in TOKKI_ENV; use FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            echo "TOKKI_ENV must contain only production app-runtime environment keys."
+            exit 1
+          fi
+
+      - name: Build backend (Gradle)
+        run: |
+          cd backend
+          chmod +x gradlew
+          ./gradlew clean build -x test --no-daemon
+
+      - name: Verify backend JAR
+        run: |
+          ls -lh backend/build/libs/*.jar
+
+      - name: Package backend app.jar
+        run: |
+          mkdir -p deploy/backend
+          JAR_FILE="$(find backend/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)"
+          if [ -z "$JAR_FILE" ]; then
+            echo "No executable backend JAR found in backend/build/libs"
+            exit 1
+          fi
+          cp "$JAR_FILE" deploy/backend/app.jar
+          test -s deploy/backend/app.jar
+          ls -lh deploy/backend/app.jar
+
+      # ==========================================
+      # 3. 프론트엔드 빌드 (React + Vite)
+      # ==========================================
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend (Vite)
+        run: |
+          cd frontend
+          # Export VITE_ variables from .env (avoid sourcing entire file due to PRIVATE_KEY newlines)
+          if [ -f ../.env ]; then
+            grep -E '^VITE_' ../.env | while read -r line; do
+              export "$line"
+            done
+          fi
+          # Ensure API URL is relative for production
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-}"
+          npm run build
+
+      - name: Verify frontend dist
+        run: |
+          ls -lh frontend/dist/
+
+      # ==========================================
+      # 4. 서버로 파일 전송 (SCP)
+      # ==========================================
+      - name: Stop backend before transfer
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            pm2 stop tokki-backend || true
+            mkdir -p /opt/tokki/backend/logs
+
+      - name: Transfer backend JAR to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy/backend/app.jar"
+          target: "/opt/tokki/backend/"
+          strip_components: 2
+          overwrite: true
+
+      - name: Verify backend app.jar on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            test -s /opt/tokki/backend/app.jar
+            ls -lh /opt/tokki/backend/app.jar
+            jar tf /opt/tokki/backend/app.jar > /dev/null \
+              && echo "✅ JAR 유효" \
+              || { echo "❌ JAR 파일이 손상되었습니다"; exit 1; }
+
+      - name: Transfer frontend dist to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "frontend/dist/*"
+          target: "/opt/tokki/frontend/dist/"
+          strip_components: 2
+          overwrite: true
+
+      - name: Fix frontend file permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            chmod -R 755 /opt/tokki/frontend/dist/
+            echo "Frontend permissions fixed"
+
+      - name: Transfer production environment to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: ".env"
+          target: "/opt/tokki/"
+          overwrite: true
+
+      # ==========================================
+      # 5. 서버에서 배포 실행 (SSH)
+      # ==========================================
+      - name: Restart backend with pm2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            echo "=== pm2 재시작 ==="
+            cd /opt/tokki/backend
+            BACKEND_PORT=4000
+
+            # 이미 pm2에 등록되어 있으면 restart, 없으면 start
+            if pm2 describe tokki-backend > /dev/null 2>&1; then
+              SERVER_PORT="$BACKEND_PORT" pm2 restart tokki-backend --update-env
+            else
+              SERVER_PORT="$BACKEND_PORT" pm2 start java --name tokki-backend --time -- -jar app.jar
+              pm2 save
+            fi
+
+            echo "=== pm2 상태 확인 ==="
+            pm2 status
+
+            echo "=== 백엔드 헬스체크 (최대 30초 대기) ==="
+            backend_ready=0
+            for i in $(seq 1 15); do
+              http_code="$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${BACKEND_PORT}/api/auth/me" || true)"
+              if echo "$http_code" | grep -qE "200|401|403"; then
+                echo "✅ 백엔드 정상 응답 (시도 $i/15)"
+                backend_ready=1
+                break
+              fi
+              echo "⏳ 백엔드 시작 대기 중... ($i/15, status=${http_code})"
+              sleep 2
+            done
+
+            if [ "$backend_ready" -ne 1 ]; then
+              echo "❌ 백엔드가 ${BACKEND_PORT} 포트에서 정상 응답하지 않습니다."
+              echo "=== listening ports ==="
+              ss -ltnp || true
+              echo "=== pm2 logs: tokki-backend ==="
+              pm2 logs tokki-backend --lines 120 --nostream || true
+              exit 1
+            fi
+
+      - name: Restore backend on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "=== 배포 실패 — 백엔드 복구 시도 ==="
+            pm2 restart tokki-backend || pm2 start java --name tokki-backend --time -- -jar /opt/tokki/backend/app.jar
+            pm2 status
+
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "=== Nginx 설정 검증 ==="
+            sudo nginx -t
+
+            echo "=== Nginx 리로드 ==="
+            sudo systemctl reload nginx
+
+            echo "=== Nginx 상태 확인 ==="
+            sudo systemctl status nginx --no-pager
+
+      # ==========================================
+      # 6. 배포 최종 검증
+      # ==========================================
+      - name: Final deployment verification
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            echo "=============================="
+            echo "  🚀 배포 최종 검증 결과"
+            echo "=============================="
+
+            echo ""
+            echo "[1] pm2 프로세스 상태"
+            pm2 list
+
+            echo ""
+            echo "[2] Nginx 상태"
+            sudo systemctl is-active nginx
+
+            echo ""
+            echo "[3] 프론트엔드 파일 확인"
+            ls -lh /opt/tokki/frontend/dist/index.html
+
+            echo ""
+            echo "[4] 백엔드 JAR 확인"
+            ls -lh /opt/tokki/backend/app.jar
+
+            echo ""
+            echo "[5] 백엔드 직접 헬스체크"
+            curl -fsS -o /dev/null http://127.0.0.1:4000/api/auth/me
+
+            echo ""
+            echo "[6] Nginx 경유 API 헬스체크"
+            curl -fsS -o /dev/null http://127.0.0.1/api/auth/me
+
+            echo ""
+            echo "=============================="
+            echo "  ✅ 배포 완료!"
+            echo "=============================="

@@ -1,0 +1,28 @@
+plugins {
+    id 'base'
+}
+
+tasks.register('backendTest') {
+    group = 'verification'
+    description = 'Runs backend tests.'
+    dependsOn ':backend:test'
+}
+
+tasks.register('backendBootJar') {
+    group = 'build'
+    description = 'Builds the backend Spring Boot jar.'
+    dependsOn ':backend:bootJar'
+}
+
+tasks.register('frontendBuild', Exec) {
+    group = 'build'
+    description = 'Builds the frontend Vite app.'
+    workingDir file('frontend')
+    commandLine System.getProperty('os.name').toLowerCase().contains('windows')
+            ? ['cmd', '/c', 'npm', 'run', 'build']
+            : ['npm', 'run', 'build']
+}
+
+tasks.named('check') {
+    dependsOn 'backendTest'
+}

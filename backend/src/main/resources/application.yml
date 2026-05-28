@@ -1,0 +1,84 @@
+spring:
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+  application:
+    name: tokki
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/tokki?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:${MYSQL_USERNAME}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${MYSQL_PASSWORD}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+  sql:
+    init:
+      mode: never
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        http-only: true
+        secure: false
+
+tokki:
+  database:
+    host: ${MYSQL_HOST:localhost}
+    port: ${MYSQL_PORT:3306}
+    name: ${MYSQL_DATABASE:tokki}
+    username: ${MYSQL_USERNAME:tokki_user}
+    ssl-mode: ${MYSQL_SSL_MODE:REQUIRED}
+  frontend:
+    login-url: ${TOKKI_FRONTEND_LOGIN_URL:http://localhost:5173/login}
+    callback-url: ${TOKKI_FRONTEND_CALLBACK_URL:http://localhost:5173/login/callback}
+  admin:
+    secret-key: ${ADMIN_SECRET_KEY}
+  auth:
+    event-log:
+      max-events: ${TOKKI_AUTH_EVENT_LOG_MAX_EVENTS:100}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
+  firebase:
+    web:
+      api-key: ${VITE_FIREBASE_API_KEY:}
+      auth-domain: ${VITE_FIREBASE_AUTH_DOMAIN:}
+      project-id: ${VITE_FIREBASE_PROJECT_ID:}
+      storage-bucket: ${VITE_FIREBASE_STORAGE_BUCKET:}
+      messaging-sender-id: ${VITE_FIREBASE_MESSAGING_SENDER_ID:}
+      app-id: ${VITE_FIREBASE_APP_ID:}
+      measurement-id: ${VITE_FIREBASE_MEASUREMENT_ID:}
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:${VITE_FIREBASE_PROJECT_ID:}}
+  client-email: ${FIREBASE_CLIENT_EMAIL:}
+  private-key: ${FIREBASE_PRIVATE_KEY:}
